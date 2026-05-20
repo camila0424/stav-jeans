@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+/* ── ANIMACIONES BASE ─────────────────────────────────────── */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes draw-line {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── CLASES DE ANIMACIÓN ─────────────────────────────────── */
+
+.animate-fade-up    { animation: fadeUp    0.7s cubic-bezier(.22,.68,0,1.2) both; }
+.animate-fade-in    { animation: fadeIn    0.6s ease both; }
+.animate-fade-left  { animation: fadeLeft  0.7s cubic-bezier(.22,.68,0,1.2) both; }
+.animate-fade-right { animation: fadeRight 0.7s cubic-bezier(.22,.68,0,1.2) both; }
+.animate-scale-in   { animation: scaleIn   0.6s cubic-bezier(.22,.68,0,1.2) both; }
+.animate-slide-down { animation: slideDown 0.5s ease both; }
+.animate-float      { animation: float 4s ease-in-out infinite; }
+
+/* Delays escalonados — para que entren uno a uno */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-700 { animation-delay: 0.7s; }
+.delay-800 { animation-delay: 0.8s; }
+
+/* Clase que activa visibilidad — la pone el hook */
+.reveal { opacity: 0; }
+.reveal.visible { opacity: 1; }
+
+/* ── EFECTO SHIMMER EN TEXTO ─────────────────────────────── */
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #A0B4C8 0%,
+    #D0DDE8 40%,
+    #ffffff 50%,
+    #D0DDE8 60%,
+    #A0B4C8 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* ── CURSOR PERSONALIZADO ────────────────────────────────── */
+.cursor-dot {
+  width: 8px; height: 8px;
+  background: #A0B4C8;
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.1s ease;
+}
+
+/* ── HOVER CARDS ─────────────────────────────────────────── */
+.card-hover {
+  transition: transform 0.35s cubic-bezier(.22,.68,0,1.2),
+              box-shadow 0.35s ease;
+}
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px rgba(14,30,48,0.18);
+}
+
+/* ── BOTÓN CON EFECTO RIPPLE ─────────────────────────────── */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.08);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.btn-primary:hover::after { opacity: 1; }
+.btn-primary:active { transform: scale(0.98); }
+
+/* ── IMAGEN CON OVERLAY SUAVE ────────────────────────────── */
+.img-hover {
+  overflow: hidden;
+}
+.img-hover img {
+  transition: transform 0.6s cubic-bezier(.22,.68,0,1.2);
+}
+.img-hover:hover img {
+  transform: scale(1.07);
+}
+
+/* ── LÍNEA ANIMADA ───────────────────────────────────────── */
+.line-draw {
+  height: 1px;
+  background: #D4A843;
+  width: 0;
+  transition: width 1s ease;
+}
+.line-draw.visible { width: 100%; }
+
+/* ── NAVEGACIÓN CON UNDERLINE ────────────────────────────── */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0;
+  width: 0; height: 1px;
+  background: #A0B4C8;
+  transition: width 0.3s ease;
+}
+.nav-link:hover::after { width: 100%; }
+
+/* ── SCROLL SUAVE GLOBAL ─────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+/* ── SELECCIÓN DE TEXTO ──────────────────────────────────── */
+::selection {
+  background: #2E4A6A;
+  color: #D0DDE8;
+}
+
+/* ── SCROLL INDICATOR ────────────────────────────────────── */
+@keyframes scrollLine {
+  0%, 100% { transform: scaleY(0); transform-origin: top; }
+  50%       { transform: scaleY(1); transform-origin: top; }
+}
+.animate-scroll-line { animation: scrollLine 2s ease infinite; }
