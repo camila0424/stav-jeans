@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProductById, adminCreateProduct, adminUpdateProduct, uploadImageToCloudinary } from '../../services/api';
+import { getProductById, adminCreateProduct, adminUpdateProduct, uploadImageToCloudinary, getCategories } from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import type { Category } from '../../types/index';
 
-const CATEGORIES = ['Skinny', 'Bota Recta', 'Mom Fit', 'Wide Leg', 'Straight'];
-const SIZES = ['34', '36', '38', '40', '42', '44'];
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '34', '36', '38', '40', '42', '44'];
 
 interface FormVariant {
   id?: number;
@@ -49,6 +49,10 @@ function AdminProductForm() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [categoriesError, setCategoriesError] = useState(false);
+
   const [variantDraft, setVariantDraft] = useState({
     size: '34',
     color: '',
@@ -59,6 +63,13 @@ function AdminProductForm() {
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const filesRef = useRef<(File | null)[]>([null, null, null, null, null, null]);
   const variantIdCounter = useRef(1000);
+
+  useEffect(() => {
+    getCategories()
+      .then(data => setCategories(data as Category[]))
+      .catch(() => setCategoriesError(true))
+      .finally(() => setLoadingCategories(false));
+  }, []);
 
   useEffect(() => {
     if (!isEditing || !id) return;
@@ -318,14 +329,21 @@ function AdminProductForm() {
               id="category"
               name="category"
               required
+              disabled={loadingCategories || categoriesError}
               value={form.category}
               onChange={handleFieldChange}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-body focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy bg-white"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-body focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy bg-white disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <option value="">Seleccionar...</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
+              {loadingCategories && <option value="">Cargando categorías…</option>}
+              {categoriesError && <option value="">Error al cargar categorías</option>}
+              {!loadingCategories && !categoriesError && (
+                <>
+                  <option value="">Seleccionar...</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </>
+              )}
             </select>
           </div>
 
