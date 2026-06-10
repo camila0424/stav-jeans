@@ -16,7 +16,16 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT
 
-app.use(cors({ origin: process.env.CLIENT_URL }))
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:4173'
+].filter(Boolean)
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}))
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '10mb' }))
 
