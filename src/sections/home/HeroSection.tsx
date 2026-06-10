@@ -1,34 +1,32 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../../components/common/Button';
+import { getHeroConfig, type HeroConfig } from '../../services/api';
 
-const LS_KEY = 'stav_hero';
-
-const DEFAULTS = {
-  image: 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=1600&q=80',
+const DEFAULTS: HeroConfig = {
+  image_url: 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=1600&q=80',
   title: 'Jeans colombianos que abrazan tu cuerpo',
   subtitle: 'Denim de calidad premium diseñado para cada curva',
-  cta: 'Ver colección',
-  posX: 50,
-  posY: 30,
+  cta_text: 'Ver colección',
+  position_x: 50,
+  position_y: 30,
 };
 
 function HeroSection() {
-  const [hero, setHero] = useState(DEFAULTS);
+  const [hero, setHero] = useState<HeroConfig>(DEFAULTS);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) setHero({ ...DEFAULTS, ...JSON.parse(raw) });
-    } catch { }
+    getHeroConfig()
+      .then(data => setHero({ ...DEFAULTS, ...data }))
+      .catch(() => { });
   }, []);
 
   return (
     <section
       className="relative h-screen flex items-center justify-center overflow-hidden bg-cover"
       style={{
-        backgroundImage: `url('/src/assets/hero.png')`,
-        backgroundPosition: `${hero.posX}% ${hero.posY}%`,
+        backgroundImage: `url('${hero.image_url}')`,
+        backgroundPosition: `${hero.position_x}% ${hero.position_y}%`,
       }}
     >
       <div className="absolute inset-0 bg-navy/65" />
@@ -41,7 +39,7 @@ function HeroSection() {
         </p>
         <Link to="/tienda">
           <Button variant="secondary" size="lg">
-            {hero.cta}
+            {hero.cta_text}
           </Button>
         </Link>
       </div>
