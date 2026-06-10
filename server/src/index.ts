@@ -17,10 +17,10 @@ const app = express()
 const PORT = process.env.PORT
 
 const allowedOrigins = [
-  process.env.CLIENT_URL,
+  process.env.CLIENT_URL || '',
   'http://localhost:5173',
   'http://localhost:4173'
-].filter(Boolean)
+].filter(origin => origin !== '')
 
 app.use(cors({
   origin: allowedOrigins,
