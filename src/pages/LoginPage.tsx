@@ -1,22 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const ADMIN_EMAIL = 'stavjeans.info@gmail.com';
-const ADMIN_PASSWORD = 'DinaStavJeans2021';
+import { loginAdmin } from '../services/api';
 
 function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      localStorage.setItem('stav_admin', JSON.stringify({ token: 'mock-token', role: 'admin' }));
+    setError(null);
+    setLoading(true);
+    try {
+      const { token, email: adminEmail } = await loginAdmin({ email, password });
+      localStorage.setItem('stav_admin', JSON.stringify({ token, email: adminEmail }));
       navigate('/admin');
-    } else {
-      setError('Credenciales incorrectas');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Credenciales incorrectas');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -68,9 +72,10 @@ function LoginPage() {
 
           <button
             type="submit"
-            className="w-full bg-yellow text-navy font-body font-semibold text-sm uppercase tracking-wider py-3 rounded-lg hover:opacity-90 transition-opacity mt-1 cursor-pointer"
+            disabled={loading}
+            className="w-full bg-yellow text-navy font-body font-semibold text-sm uppercase tracking-wider py-3 rounded-lg hover:opacity-90 transition-opacity mt-1 cursor-pointer disabled:opacity-60"
           >
-            Entrar
+            {loading ? 'Entrando…' : 'Entrar'}
           </button>
         </form>
       </div>

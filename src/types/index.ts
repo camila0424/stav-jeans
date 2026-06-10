@@ -8,13 +8,21 @@ export interface Category {
   image?: string;
 }
 
+export interface ProductVariant {
+  id?: number;
+  size: string;
+  color: string;
+  colorHex: string;
+  stock: number;
+}
+
 export interface Product {
   id: number;
   name: string;
   slug: string;
   description: string;
   price: number;
-  salePrice?: number;
+  salePrice?: number | null;
   images: string[];
   category: Category;
   stock: number;
@@ -22,6 +30,7 @@ export interface Product {
   colors: string[];
   isActive: boolean;
   isFeatured: boolean;
+  variants?: ProductVariant[];
 }
 
 export interface OrderItem {

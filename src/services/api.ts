@@ -1,10 +1,21 @@
-import type { CartItem, Order, Product, User } from '../types/index';
+import type { CartItem, Order, Product, ProductVariant, User } from '../types/index';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem('stav_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function getAdminAuthHeaders(): HeadersInit {
+  const stored = localStorage.getItem('stav_admin');
+  if (!stored) return {};
+  try {
+    const { token } = JSON.parse(stored) as { token: string };
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -16,7 +27,7 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     let message = `API error ${res.status}`;
     try {
       const body = await res.json();
-      message = body?.detail ?? body?.message ?? JSON.stringify(body) ?? message;
+      message = body?.detail ?? body?.message ?? body?.error ?? JSON.stringify(body) ?? message;
     } catch {
       // body is not JSON, keep default message
     }
@@ -25,7 +36,7 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ── Productos ──────────────────────────────────────────────────────────────
+// ── Productos (público) ────────────────────────────────────────────────────
 
 export function getProducts(filters?: {
   category?: string;
@@ -64,7 +75,65 @@ export function getCategories() {
   return request('/categories/');
 }
 
+// ── Productos (admin) ──────────────────────────────────────────────────────
+
+export interface ProductPayload {
+  name: string;
+  description: string;
+  price: number;
+  sale_price?: number | null;
+  category: string;
+  is_active: boolean;
+  is_featured: boolean;
+  images: string[];
+  variants: Array<{ size: string; color: string; color_hex: string; stock: number }>;
+}
+
+export function adminCreateProduct(data: ProductPayload): Promise<Product> {
+  return request<Product>('/products/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: getAdminAuthHeaders(),
+  });
+}
+
+export function adminUpdateProduct(id: number, data: ProductPayload): Promise<Product> {
+  return request<Product>(`/products/${id}/`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers: getAdminAuthHeaders(),
+  });
+}
+
+export function adminDeleteProduct(id: number): Promise<{ message: string }> {
+  return request<{ message: string }>(`/products/${id}/`, {
+    method: 'DELETE',
+    headers: getAdminAuthHeaders(),
+  });
+}
+
+export function adminUploadImage(
+  base64: string,
+  folder = 'stavjeans/products'
+): Promise<{ url: string; public_id: string }> {
+  return request<{ url: string; public_id: string }>('/admin/upload', {
+    method: 'POST',
+    body: JSON.stringify({ image: base64, folder }),
+    headers: getAdminAuthHeaders(),
+  });
+}
+
 // ── Auth ───────────────────────────────────────────────────────────────────
+
+export function loginAdmin(data: {
+  email: string;
+  password: string;
+}): Promise<{ token: string; email: string }> {
+  return request<{ token: string; email: string }>('/auth/login/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
 
 export function loginUser(data: {
   email: string;

@@ -1,85 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-interface ProductImage {
-  url: string;
-  isMain: boolean;
-}
-
-interface ProductVariant {
-  size: string;
-  color: string;
-  colorHex: string;
-  stock: number;
-}
-
-interface AdminProduct {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  isActive: boolean;
-  images: ProductImage[];
-  variants: ProductVariant[];
-}
-
-const MOCK_PRODUCTS: AdminProduct[] = [
-  {
-    id: 1,
-    name: 'Jean Skinny Classic',
-    price: 89900,
-    category: 'Jeans',
-    isActive: true,
-    images: [{ url: 'https://placehold.co/60x60', isMain: true }],
-    variants: [
-      { size: 'S', color: 'Azul', colorHex: '#1e40af', stock: 10 },
-      { size: 'M', color: 'Azul', colorHex: '#1e40af', stock: 8 },
-      { size: 'L', color: 'Negro', colorHex: '#111827', stock: 6 },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Jean Wide Leg Beige',
-    price: 105000,
-    category: 'Jeans',
-    isActive: true,
-    images: [{ url: 'https://placehold.co/60x60', isMain: true }],
-    variants: [
-      { size: 'S', color: 'Beige', colorHex: '#d4a574', stock: 5 },
-      { size: 'M', color: 'Beige', colorHex: '#d4a574', stock: 7 },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Pantalón Cargo Negro',
-    price: 79000,
-    category: 'Cargo',
-    isActive: false,
-    images: [],
-    variants: [
-      { size: 'M', color: 'Negro', colorHex: '#111827', stock: 3 },
-      { size: 'L', color: 'Negro', colorHex: '#111827', stock: 5 },
-      { size: 'XL', color: 'Negro', colorHex: '#111827', stock: 0 },
-    ],
-  },
-];
+import { getProducts, adminDeleteProduct } from '../../services/api';
+import type { Product } from '../../types';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 function AdminProducts() {
-  const [products, setProducts] = useState<AdminProduct[]>(MOCK_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    getProducts()
+      .then(data => setProducts(data))
+      .catch(err => setError(err instanceof Error ? err.message : 'Error al cargar productos'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleDelete(id: number) {
+    if (!window.confirm('¿Eliminar este producto?')) return;
+    try {
+      await adminDeleteProduct(id);
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error al eliminar producto');
+    }
+  }
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
-
-  function handleDelete(id: number) {
-    if (!window.confirm('¿Eliminar este producto?')) return;
-    setProducts(prev => prev.filter(p => p.id !== id));
-  }
-
-  function mainImage(images: ProductImage[]) {
-    return images.find(i => i.isMain) ?? images[0] ?? null;
-  }
 
   return (
     <div className="p-8">
@@ -108,30 +60,40 @@ function AdminProducts() {
         />
       </div>
 
+      {/* Estados */}
+      {loading && (
+        <div className="flex justify-center py-20">
+          <LoadingSpinner size="lg" />
+        </div>
+      )}
+
+      {error && (
+        <p className="text-red-500 font-body text-sm py-4">{error}</p>
+      )}
+
       {/* Tabla */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {filtered.length > 0 ? (
-          <table className="w-full text-sm font-body">
-            <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wide">
-              <tr>
-                <th className="px-6 py-3 text-left">Imagen</th>
-                <th className="px-6 py-3 text-left">Nombre</th>
-                <th className="px-6 py-3 text-left">Precio</th>
-                <th className="px-6 py-3 text-left">Categoría</th>
-                <th className="px-6 py-3 text-left">Estado</th>
-                <th className="px-6 py-3 text-left">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filtered.map(product => {
-                const img = mainImage(product.images);
-                return (
+      {!loading && !error && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {filtered.length > 0 ? (
+            <table className="w-full text-sm font-body">
+              <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wide">
+                <tr>
+                  <th className="px-6 py-3 text-left">Imagen</th>
+                  <th className="px-6 py-3 text-left">Nombre</th>
+                  <th className="px-6 py-3 text-left">Precio</th>
+                  <th className="px-6 py-3 text-left">Categoría</th>
+                  <th className="px-6 py-3 text-left">Estado</th>
+                  <th className="px-6 py-3 text-left">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map(product => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     {/* Imagen */}
                     <td className="px-6 py-4">
-                      {img ? (
+                      {product.images[0] ? (
                         <img
-                          src={img.url}
+                          src={product.images[0]}
                           alt={product.name}
                           className="w-15 h-15 object-cover rounded-lg"
                         />
@@ -156,7 +118,7 @@ function AdminProducts() {
 
                     {/* Categoría */}
                     <td className="px-6 py-4 text-gray-600">
-                      {product.category}
+                      {product.category.name}
                     </td>
 
                     {/* Estado */}
@@ -190,22 +152,26 @@ function AdminProducts() {
                       </div>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        ) : (
-          <div className="py-16 text-center font-body text-gray-400">
-            <p className="mb-4">No hay productos. Añade el primero.</p>
-            <Link
-              to="/admin/productos/nuevo"
-              className="inline-block bg-navy text-white text-sm px-5 py-2.5 rounded-lg hover:bg-navy/90 transition-colors"
-            >
-              Añadir producto
-            </Link>
-          </div>
-        )}
-      </div>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="py-16 text-center font-body text-gray-400">
+              <p className="mb-4">
+                {search ? 'Sin resultados para esa búsqueda.' : 'No hay productos. Añade el primero.'}
+              </p>
+              {!search && (
+                <Link
+                  to="/admin/productos/nuevo"
+                  className="inline-block bg-navy text-white text-sm px-5 py-2.5 rounded-lg hover:bg-navy/90 transition-colors"
+                >
+                  Añadir producto
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

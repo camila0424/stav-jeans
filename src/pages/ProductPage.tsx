@@ -1,72 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Product } from '../types';
-import { getProduct } from '../services/api';
+import { getProduct, getProducts } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import ProductCard from '../components/common/ProductCard';
 import useCart from '../hooks/useCart';
-
-const MOCK_SUGGESTIONS: Product[] = [
-  {
-    id: 101,
-    name: 'Jean Mom Fit',
-    slug: 'jean-mom-fit',
-    description: 'Corte alto y relajado, tendencia actual.',
-    price: 9500,
-    images: ['/placeholder.png'],
-    category: { id: 1, name: 'Jeans', slug: 'jeans' },
-    stock: 5,
-    sizes: ['36', '38', '40'],
-    colors: ['azul oscuro'],
-    isActive: true,
-    isFeatured: false,
-  },
-  {
-    id: 102,
-    name: 'Jean Skinny',
-    slug: 'jean-skinny',
-    description: 'Ajustado desde la cadera hasta el tobillo.',
-    price: 8200,
-    salePrice: 6900,
-    images: ['/placeholder.png'],
-    category: { id: 1, name: 'Jeans', slug: 'jeans' },
-    stock: 8,
-    sizes: ['34', '36', '38', '40'],
-    colors: ['negro'],
-    isActive: true,
-    isFeatured: true,
-  },
-  {
-    id: 103,
-    name: 'Jean Wide Leg',
-    slug: 'jean-wide-leg',
-    description: 'Pierna ancha para un look retro y cómodo.',
-    price: 10200,
-    images: ['/placeholder.png'],
-    category: { id: 1, name: 'Jeans', slug: 'jeans' },
-    stock: 3,
-    sizes: ['38', '40', '42'],
-    colors: ['celeste'],
-    isActive: true,
-    isFeatured: false,
-  },
-  {
-    id: 104,
-    name: 'Jean Boyfriend',
-    slug: 'jean-boyfriend',
-    description: 'Holgado y cómodo, perfecto para cualquier ocasión.',
-    price: 8800,
-    salePrice: 7500,
-    images: ['/placeholder.png'],
-    category: { id: 1, name: 'Jeans', slug: 'jeans' },
-    stock: 0,
-    sizes: ['36', '38', '40', '42', '44'],
-    colors: ['azul medio'],
-    isActive: true,
-    isFeatured: false,
-  },
-];
 
 function formatPrice(n: number) {
   return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
@@ -77,6 +16,7 @@ function ProductPage() {
   const navigate = useNavigate();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +30,9 @@ function ProductPage() {
     if (!slug) return;
     setLoading(true);
     setError(null);
+    setProduct(null);
+    setSuggestions([]);
+
     getProduct(slug)
       .then((data) => {
         const p = data as Product;
@@ -97,6 +40,22 @@ function ProductPage() {
         setSelectedSize(p.sizes[0] ?? '');
         setActiveImage(0);
         setQuantity(1);
+
+        // Load related products from same category, excluding current product
+        return getProducts().then(all => {
+          const related = all
+            .filter(x => x.id !== p.id && x.category.slug === p.category.slug)
+            .slice(0, 4);
+          // If fewer than 4 in same category, fill with other products
+          if (related.length < 4) {
+            const others = all
+              .filter(x => x.id !== p.id && x.category.slug !== p.category.slug)
+              .slice(0, 4 - related.length);
+            setSuggestions([...related, ...others]);
+          } else {
+            setSuggestions(related);
+          }
+        });
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Error al cargar el producto')
@@ -279,16 +238,18 @@ function ProductPage() {
       </div>
 
       {/* También te puede gustar */}
-      <section>
-        <h2 className="font-heading text-3xl text-navy mb-8">
-          También te puede gustar
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {MOCK_SUGGESTIONS.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section>
+      {suggestions.length > 0 && (
+        <section>
+          <h2 className="font-heading text-3xl text-navy mb-8">
+            También te puede gustar
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {suggestions.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

@@ -9,6 +9,7 @@ import paymentsRoutes from './routes/payments.routes'
 import promotionsRoutes from './routes/promotions.routes'
 import adminRoutes from './routes/admin.routes'
 import { errorHandler } from './middleware/error.middleware'
+import { initDB } from './db/init'
 
 dotenv.config()
 
@@ -32,8 +33,10 @@ app.use('/api/promotions', promotionsRoutes)
 app.use('/api/admin', adminRoutes)
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`)
+initDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en puerto ${PORT}`)
+  })
 })
 
 export default app
