@@ -8,6 +8,7 @@ import subscribersRoutes from './routes/subscribers.routes'
 import paymentsRoutes from './routes/payments.routes'
 import promotionsRoutes from './routes/promotions.routes'
 import adminRoutes from './routes/admin.routes'
+import categoriesRoutes from './routes/categories.routes'
 import { errorHandler } from './middleware/error.middleware'
 import { initDB } from './db/init'
 
@@ -46,6 +47,7 @@ app.use('/api/subscribers', subscribersRoutes)
 app.use('/api/payments', paymentsRoutes)
 app.use('/api/promotions', promotionsRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/categories', categoriesRoutes)
 app.use(errorHandler)
 
 initDB().then(() => {
