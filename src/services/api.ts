@@ -1,4 +1,4 @@
-import type { CartItem, Order, Product, ProductVariant, User } from '../types/index';
+import type { CartItem, Order, Product, User } from '../types/index';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
 

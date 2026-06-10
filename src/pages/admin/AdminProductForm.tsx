@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getProductById, adminCreateProduct, adminUpdateProduct, adminUploadImage } from '../../services/api';
-import type { ProductVariant } from '../../types';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const CATEGORIES = ['Skinny', 'Bota Recta', 'Mom Fit', 'Wide Leg', 'Straight'];
@@ -143,7 +142,7 @@ function AdminProductForm() {
     setVariantDraft({ size: '34', color: '', colorHex: '#000000', stock: '' });
   }
 
-  function removeVariant(variantId: number | undefined, index: number) {
+  function removeVariant(_variantId: number | undefined, index: number) {
     setForm(prev => ({
       ...prev,
       variants: prev.variants.filter((_, i) => i !== index),
