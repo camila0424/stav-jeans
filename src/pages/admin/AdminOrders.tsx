@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import type { Order } from '../../types';
+import { useState, useEffect } from 'react';
+import { getAdminOrders, updateAdminOrderStatus } from '../../services/api';
+import type { AdminOrder } from '../../services/api';
 
-type OrderStatus = Order['status'];
+type OrderStatus = AdminOrder['status'];
 
 const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string }> = {
   pending:   { label: 'Pendiente',  className: 'bg-yellow/20 text-yellow-800' },
@@ -11,39 +12,43 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string }> =
   cancelled: { label: 'Cancelado',  className: 'bg-red-100 text-red-700' },
 };
 
-interface MockOrder {
-  id: string;
-  customer: string;
-  date: string;
-  total: number;
-  status: OrderStatus;
-  items: number;
-}
-
-const MOCK_ORDERS: MockOrder[] = [
-  { id: '#1024', customer: 'María García',     date: '28 may 2026', total: 89900,  status: 'confirmed', items: 2 },
-  { id: '#1023', customer: 'Laura Torres',     date: '27 may 2026', total: 45000,  status: 'shipped',   items: 1 },
-  { id: '#1022', customer: 'Valentina Ruiz',   date: '26 may 2026', total: 130000, status: 'delivered', items: 3 },
-  { id: '#1021', customer: 'Sofía López',      date: '25 may 2026', total: 67500,  status: 'pending',   items: 1 },
-  { id: '#1020', customer: 'Camila Martínez',  date: '24 may 2026', total: 159000, status: 'delivered', items: 4 },
-  { id: '#1019', customer: 'Isabella Herrera', date: '23 may 2026', total: 89900,  status: 'cancelled', items: 2 },
-  { id: '#1018', customer: 'Daniela Castro',   date: '22 may 2026', total: 45000,  status: 'delivered', items: 1 },
-];
-
 const ALL_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function AdminOrders() {
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getAdminOrders()
+      .then(setOrders)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleStatusChange(id: number, status: OrderStatus) {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    try {
+      await updateAdminOrderStatus(id, status);
+    } catch {
+      // revert on failure
+      getAdminOrders().then(setOrders).catch(() => {});
+    }
+  }
 
   const filtered = filter === 'all'
-    ? MOCK_ORDERS
-    : MOCK_ORDERS.filter(o => o.status === filter);
+    ? orders
+    : orders.filter(o => o.status === filter);
 
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-heading text-navy mb-1">Pedidos</h1>
-        <p className="text-sm text-gray-500 font-body">{MOCK_ORDERS.length} pedidos este mes</p>
+        <p className="text-sm text-gray-500 font-body">{orders.length} pedidos registrados</p>
       </div>
 
       {/* Filtro por estado */}
@@ -86,21 +91,32 @@ function AdminOrders() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filtered.map(order => {
+            {loading && (
+              <tr>
+                <td colSpan={6} className="px-6 py-10 text-center text-gray-400">Cargando pedidos...</td>
+              </tr>
+            )}
+            {!loading && filtered.map(order => {
               const s = STATUS_CONFIG[order.status];
               return (
                 <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-navy">{order.id}</td>
-                  <td className="px-6 py-4 text-gray-700">{order.customer}</td>
-                  <td className="px-6 py-4 text-gray-500">{order.date}</td>
-                  <td className="px-6 py-4 text-gray-500">{order.items} art.</td>
+                  <td className="px-6 py-4 font-medium text-navy">#{order.id}</td>
+                  <td className="px-6 py-4 text-gray-700">{order.customer_name}</td>
+                  <td className="px-6 py-4 text-gray-500">{formatDate(order.created_at)}</td>
+                  <td className="px-6 py-4 text-gray-500">{order.items?.length ?? 0} art.</td>
                   <td className="px-6 py-4 font-medium text-gray-700">
                     ${order.total.toLocaleString('es-CO')}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${s.className}`}>
-                      {s.label}
-                    </span>
+                    <select
+                      value={order.status}
+                      onChange={e => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium border-0 outline-none cursor-pointer ${s.className}`}
+                    >
+                      {ALL_STATUSES.map(st => (
+                        <option key={st} value={st}>{STATUS_CONFIG[st].label}</option>
+                      ))}
+                    </select>
                   </td>
                 </tr>
               );
@@ -108,7 +124,7 @@ function AdminOrders() {
           </tbody>
         </table>
 
-        {filtered.length === 0 && (
+        {!loading && filtered.length === 0 && (
           <div className="py-16 text-center text-gray-400 font-body">
             No hay pedidos con ese estado.
           </div>

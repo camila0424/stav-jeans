@@ -226,3 +226,140 @@ export function subscribeEmail(email: string): Promise<{ message: string }> {
 export function validatePromoCode(code: string) {
   return request(`/promotions/validate/?code=${code}`);
 }
+
+// ── Hero ───────────────────────────────────────────────────────────────────
+
+export interface HeroConfig {
+  title: string;
+  subtitle: string;
+  cta_text: string;
+  image_url: string;
+  position_x: number;
+  position_y: number;
+}
+
+export function getHeroConfig(): Promise<HeroConfig> {
+  return request<HeroConfig>('/hero/');
+}
+
+export function updateHeroConfig(data: HeroConfig): Promise<HeroConfig> {
+  return request<HeroConfig>('/hero/', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+  });
+}
+
+// ── Oferta ─────────────────────────────────────────────────────────────────
+
+export interface OfertaConfig {
+  title: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  hero_image_url: string;
+  products: Array<{
+    id: number;
+    name: string;
+    image: string;
+    originalPrice: string;
+    offerPrice: string;
+    sizes: string[];
+  }>;
+}
+
+export function getOfertaConfig(): Promise<OfertaConfig> {
+  return request<OfertaConfig>('/oferta/');
+}
+
+export function updateOfertaConfig(data: OfertaConfig): Promise<OfertaConfig> {
+  return request<OfertaConfig>('/oferta/', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+  });
+}
+
+// ── Colección ──────────────────────────────────────────────────────────────
+
+export interface ColeccionConfig {
+  name: string;
+  start_date: string;
+  end_date: string;
+  prendas: Array<{
+    id: number;
+    name: string;
+    image: string;
+    price: string;
+    sizes: string[];
+  }>;
+}
+
+export function getColeccionConfig(): Promise<ColeccionConfig> {
+  return request<ColeccionConfig>('/coleccion/');
+}
+
+export function updateColeccionConfig(data: ColeccionConfig): Promise<ColeccionConfig> {
+  return request<ColeccionConfig>('/coleccion/', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+  });
+}
+
+// ── Catálogo ───────────────────────────────────────────────────────────────
+
+export function getCatalogoConfig(): Promise<{ sections: unknown[] }> {
+  return request<{ sections: unknown[] }>('/catalogo/');
+}
+
+export function updateCatalogoConfig(data: { sections: unknown[] }): Promise<{ sections: unknown[] }> {
+  return request<{ sections: unknown[] }>('/catalogo/', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+  });
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────
+
+export interface DashboardStats {
+  total_products: number;
+  total_orders: number;
+  total_revenue: number;
+  recent_orders: Array<{
+    id: number;
+    customer_name: string;
+    created_at: string;
+    total: number;
+    status: string;
+  }>;
+}
+
+export function getDashboardStats(): Promise<DashboardStats> {
+  return request<DashboardStats>('/dashboard/stats', { headers: getAdminAuthHeaders() });
+}
+
+// ── Pedidos (admin) ────────────────────────────────────────────────────────
+
+export interface AdminOrder {
+  id: number;
+  customer_name: string;
+  customer_email: string;
+  created_at: string;
+  total: number;
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  items: Array<{ id: number; product_name: string; quantity: number; unit_price: number }>;
+}
+
+export function getAdminOrders(): Promise<AdminOrder[]> {
+  return request<AdminOrder[]>('/orders/', { headers: getAdminAuthHeaders() });
+}
+
+export function updateAdminOrderStatus(id: number, status: string): Promise<AdminOrder> {
+  return request<AdminOrder>(`/orders/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+    headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+  });
+}

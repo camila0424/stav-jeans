@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { getHeroConfig, updateHeroConfig, uploadImageToCloudinary } from '../../services/api';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=1600&q=80';
-const LS_KEY = 'stav_hero';
 
 interface HeroData {
   image: string;
@@ -12,44 +12,73 @@ interface HeroData {
   posY: number;
 }
 
-function loadFromStorage(): HeroData {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      return {
-        image: DEFAULT_IMAGE,
-        title: 'Jeans colombianos que abrazan tu cuerpo',
-        subtitle: 'Denim de calidad premium diseñado para cada curva',
-        cta: 'Ver colección',
-        posX: 50,
-        posY: 30,
-        ...JSON.parse(raw),
-      };
-    }
-  } catch {}
-  return {
+function AdminHero() {
+  const [data, setData] = useState<HeroData>({
     image: DEFAULT_IMAGE,
-    title: 'Jeans colombianos que abrazan tu cuerpo',
-    subtitle: 'Denim de calidad premium diseñado para cada curva',
-    cta: 'Ver colección',
+    title: '',
+    subtitle: '',
+    cta: '',
     posX: 50,
     posY: 30,
-  };
-}
-
-function AdminHero() {
-  const [data, setData] = useState<HeroData>(loadFromStorage);
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    getHeroConfig()
+      .then(cfg => {
+        setData({
+          image: cfg.image_url || DEFAULT_IMAGE,
+          title: cfg.title,
+          subtitle: cfg.subtitle,
+          cta: cfg.cta_text,
+          posX: cfg.position_x,
+          posY: cfg.position_y,
+        });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setData(prev => ({ ...prev, image: URL.createObjectURL(file) }));
+    try {
+      setUploading(true);
+      const url = await uploadImageToCloudinary(file);
+      setData(prev => ({ ...prev, image: url }));
+    } catch {
+      alert('Error al subir imagen');
+    } finally {
+      setUploading(false);
+    }
   }
 
-  function handleSave() {
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
-    alert('Cambios guardados (mock)');
+  async function handleSave() {
+    try {
+      setSaving(true);
+      await updateHeroConfig({
+        title: data.title,
+        subtitle: data.subtitle,
+        cta_text: data.cta,
+        image_url: data.image,
+        position_x: data.posX,
+        position_y: data.posY,
+      });
+      alert('Cambios guardados');
+    } catch {
+      alert('Error al guardar cambios');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 text-gray-400 font-body text-sm">Cargando...</div>
+    );
   }
 
   return (
@@ -69,14 +98,15 @@ function AdminHero() {
                 type="file"
                 accept="image/*"
                 onChange={handleFile}
+                disabled={uploading}
                 className="block w-full text-sm text-gray-500 font-body
                   file:mr-3 file:py-2 file:px-4 file:border-0 file:rounded
                   file:text-sm file:font-medium file:bg-navy file:text-white
-                  file:cursor-pointer hover:file:bg-blue"
+                  file:cursor-pointer hover:file:bg-blue disabled:opacity-50"
               />
-              <p className="mt-1.5 text-xs text-gray-400 font-body">
-                La imagen se subirá a Cloudinary cuando el backend esté conectado
-              </p>
+              {uploading && (
+                <p className="mt-1.5 text-xs text-blue font-body">Subiendo imagen...</p>
+              )}
             </div>
 
             <div>
@@ -153,9 +183,10 @@ function AdminHero() {
 
             <button
               onClick={handleSave}
-              className="bg-navy text-white font-body font-medium px-6 py-2.5 rounded-lg hover:bg-blue transition-colors cursor-pointer"
+              disabled={saving || uploading}
+              className="bg-navy text-white font-body font-medium px-6 py-2.5 rounded-lg hover:bg-blue transition-colors cursor-pointer disabled:opacity-60"
             >
-              Guardar cambios
+              {saving ? 'Guardando...' : 'Guardar cambios'}
             </button>
           </div>
         </div>

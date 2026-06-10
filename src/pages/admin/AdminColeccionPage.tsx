@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { getColeccionConfig, updateColeccionConfig, uploadImageToCloudinary } from '../../services/api';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
@@ -17,39 +18,69 @@ interface ColeccionState {
   prendas: Prenda[];
 }
 
-const INITIAL: ColeccionState = {
-  name: 'Verano Mediterráneo 2025',
-  startDate: '2025-05-01',
-  endDate: '2025-08-31',
-  prendas: [
-    { id: 1, name: 'Jean Wide Mediterráneo', image: '', price: '95', sizes: ['XS', 'S', 'M', 'L'] },
-    { id: 2, name: 'Mom Fit Verano', image: '', price: '89', sizes: ['S', 'M', 'L', 'XL'] },
-  ],
+const EMPTY: ColeccionState = {
+  name: '',
+  startDate: '',
+  endDate: '',
+  prendas: [],
 };
 
-let _nextPrendaId = 100;
+let _nextPrendaId = 1000;
 
 const inputCls = 'w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-body focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy';
 const labelCls = 'block text-sm font-medium text-gray-700 font-body mb-1.5';
-const fileInputCls = 'block w-full text-sm text-gray-500 font-body file:mr-3 file:py-2 file:px-4 file:border-0 file:rounded file:text-sm file:font-medium file:bg-navy file:text-white file:cursor-pointer hover:file:bg-blue';
+const fileInputCls = 'block w-full text-sm text-gray-500 font-body file:mr-3 file:py-2 file:px-4 file:border-0 file:rounded file:text-sm file:font-medium file:bg-navy file:text-white file:cursor-pointer hover:file:bg-blue disabled:opacity-50';
 
 function AdminColeccionPage() {
-  const [data, setData] = useState<ColeccionState>(INITIAL);
+  const [data, setData] = useState<ColeccionState>(EMPTY);
   const [draft, setDraft] = useState({ name: '', price: '', sizes: [] as string[], image: '' });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [prendaUploading, setPrendaUploading] = useState<number | null>(null);
+  const [draftUploading, setDraftUploading] = useState(false);
   const imgRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const draftImgRef = useRef<HTMLInputElement>(null);
 
-  function handlePrendaImage(id: number, e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    getColeccionConfig()
+      .then(cfg => {
+        setData({
+          name: cfg.name,
+          startDate: cfg.start_date,
+          endDate: cfg.end_date,
+          prendas: cfg.prendas ?? [],
+        });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handlePrendaImage(id: number, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setData(prev => ({ ...prev, prendas: prev.prendas.map(p => p.id === id ? { ...p, image: url } : p) }));
+    try {
+      setPrendaUploading(id);
+      const url = await uploadImageToCloudinary(file);
+      setData(prev => ({ ...prev, prendas: prev.prendas.map(p => p.id === id ? { ...p, image: url } : p) }));
+    } catch {
+      alert('Error al subir imagen');
+    } finally {
+      setPrendaUploading(null);
+    }
   }
 
-  function handleDraftImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleDraftImageFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setDraft(prev => ({ ...prev, image: URL.createObjectURL(file) }));
+    try {
+      setDraftUploading(true);
+      const url = await uploadImageToCloudinary(file);
+      setDraft(prev => ({ ...prev, image: url }));
+    } catch {
+      alert('Error al subir imagen');
+    } finally {
+      setDraftUploading(false);
+    }
   }
 
   function toggleDraftSize(s: string) {
@@ -82,6 +113,27 @@ function AdminColeccionPage() {
       [arr[index], arr[to]] = [arr[to], arr[index]];
       return { ...prev, prendas: arr };
     });
+  }
+
+  async function handleSave() {
+    try {
+      setSaving(true);
+      await updateColeccionConfig({
+        name: data.name,
+        start_date: data.startDate,
+        end_date: data.endDate,
+        prendas: data.prendas,
+      });
+      alert('Cambios guardados');
+    } catch {
+      alert('Error al guardar cambios');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="p-8 text-gray-400 font-body text-sm">Cargando...</div>;
   }
 
   return (
@@ -130,9 +182,13 @@ function AdminColeccionPage() {
                   onClick={() => imgRefs.current[p.id]?.click()}
                   className="w-12 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-navy hover:text-navy transition-colors shrink-0"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
+                  {prendaUploading === p.id ? (
+                    <span className="text-xs text-blue">...</span>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  )}
                 </button>
               )}
               <input
@@ -214,8 +270,9 @@ function AdminColeccionPage() {
 
             <div>
               <label className={labelCls}>Foto</label>
-              <input ref={draftImgRef} type="file" accept="image/*" onChange={handleDraftImageFile} className={fileInputCls} />
-              {draft.image && (
+              <input ref={draftImgRef} type="file" accept="image/*" onChange={handleDraftImageFile} disabled={draftUploading} className={fileInputCls} />
+              {draftUploading && <p className="mt-1 text-xs text-blue font-body">Subiendo imagen...</p>}
+              {draft.image && !draftUploading && (
                 <img src={draft.image} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg" />
               )}
             </div>
@@ -254,10 +311,11 @@ function AdminColeccionPage() {
         <div>
           <button
             type="button"
-            onClick={() => alert('Cambios guardados (mock)')}
-            className="px-6 py-2.5 bg-navy text-white text-sm font-body rounded-lg hover:bg-blue transition-colors"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-2.5 bg-navy text-white text-sm font-body rounded-lg hover:bg-blue transition-colors disabled:opacity-60"
           >
-            Guardar cambios
+            {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </div>
       </div>

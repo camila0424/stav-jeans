@@ -49,6 +49,50 @@ export async function initDB(): Promise<void> {
         row.id,
       ])
     }
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hero_config (
+        id INT PRIMARY KEY,
+        title TEXT NOT NULL DEFAULT '',
+        subtitle TEXT NOT NULL DEFAULT '',
+        cta_text TEXT NOT NULL DEFAULT '',
+        image_url TEXT NOT NULL DEFAULT '',
+        position_x INT NOT NULL DEFAULT 50,
+        position_y INT NOT NULL DEFAULT 30,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `)
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS oferta_config (
+        id INT PRIMARY KEY,
+        title TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        start_date TEXT NOT NULL DEFAULT '',
+        end_date TEXT NOT NULL DEFAULT '',
+        hero_image_url TEXT NOT NULL DEFAULT '',
+        products JSONB NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `)
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS coleccion_config (
+        id INT PRIMARY KEY,
+        name TEXT NOT NULL DEFAULT '',
+        start_date TEXT NOT NULL DEFAULT '',
+        end_date TEXT NOT NULL DEFAULT '',
+        prendas JSONB NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `)
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS catalogo_config (
+        id INT PRIMARY KEY,
+        sections JSONB NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `)
   } catch (err) {
     console.error('DB init error:', err)
   }

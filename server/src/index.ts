@@ -9,6 +9,11 @@ import paymentsRoutes from './routes/payments.routes'
 import promotionsRoutes from './routes/promotions.routes'
 import adminRoutes from './routes/admin.routes'
 import categoriesRoutes from './routes/categories.routes'
+import heroRoutes from './routes/hero.routes'
+import ofertaRoutes from './routes/oferta.routes'
+import coleccionRoutes from './routes/coleccion.routes'
+import catalogoRoutes from './routes/catalogo.routes'
+import dashboardRoutes from './routes/dashboard.routes'
 import { errorHandler } from './middleware/error.middleware'
 import { initDB } from './db/init'
 
@@ -48,6 +53,11 @@ app.use('/api/payments', paymentsRoutes)
 app.use('/api/promotions', promotionsRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/categories', categoriesRoutes)
+app.use('/api/hero', heroRoutes)
+app.use('/api/oferta', ofertaRoutes)
+app.use('/api/coleccion', coleccionRoutes)
+app.use('/api/catalogo', catalogoRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 app.use(errorHandler)
 
 initDB().then(() => {

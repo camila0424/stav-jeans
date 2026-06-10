@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { getCatalogoConfig, updateCatalogoConfig, uploadImageToCloudinary } from '../../services/api';
 
 // ---------- Types ----------
 
@@ -34,34 +35,6 @@ interface CatalogSection {
 
 let _uid = 200;
 const uid = () => _uid++;
-
-// ---------- Mock data ----------
-
-const INITIAL_SECTIONS: CatalogSection[] = [
-  {
-    id: 1,
-    name: 'Jeans Mujer',
-    sizes: ['34', '36', '38', '40', '42', '44'],
-    filterGroups: [
-      { id: 1, name: 'Corte', options: [{ id: 1, name: 'Skinny' }, { id: 2, name: 'Mom Fit' }, { id: 3, name: 'Wide Leg' }, { id: 4, name: 'Straight' }] },
-      { id: 2, name: 'Tiro', options: [{ id: 5, name: 'Alto' }, { id: 6, name: 'Medio' }, { id: 7, name: 'Bajo' }] },
-      { id: 3, name: 'Tela', options: [{ id: 8, name: 'Denim clásico' }, { id: 9, name: 'Stretch' }, { id: 10, name: 'Lino' }] },
-    ],
-    products: [
-      { id: 1, name: 'Jean Skinny Classic', image: '', price: '89', sizes: ['36', '38', '40'], filters: { 1: 1, 2: 5 } },
-      { id: 2, name: 'Mom Fit Vintage', image: '', price: '95', sizes: ['38', '40', '42'], filters: { 1: 2, 2: 5 } },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Accesorios',
-    sizes: ['Única'],
-    filterGroups: [
-      { id: 4, name: 'Tipo', options: [{ id: 11, name: 'Cinturón' }, { id: 12, name: 'Bolso' }, { id: 13, name: 'Joyería' }] },
-    ],
-    products: [],
-  },
-];
 
 // ---------- Shared styles ----------
 
@@ -302,6 +275,8 @@ function ProductsManager({ section, allSections, onUpdate, onMove }: ProductsMan
     filters: {} as Record<number, number>,
     image: '',
   });
+  const [draftUploading, setDraftUploading] = useState(false);
+  const [productUploading, setProductUploading] = useState<number | null>(null);
   const draftImgRef = useRef<HTMLInputElement>(null);
   const imgRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
@@ -335,17 +310,32 @@ function ProductsManager({ section, allSections, onUpdate, onMove }: ProductsMan
     onUpdate({ ...section, products: section.products.filter(p => p.id !== id) });
   }
 
-  function handleProductImage(id: number, e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleProductImage(id: number, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    onUpdate({ ...section, products: section.products.map(p => p.id === id ? { ...p, image: url } : p) });
+    try {
+      setProductUploading(id);
+      const url = await uploadImageToCloudinary(file);
+      onUpdate({ ...section, products: section.products.map(p => p.id === id ? { ...p, image: url } : p) });
+    } catch {
+      alert('Error al subir imagen');
+    } finally {
+      setProductUploading(null);
+    }
   }
 
-  function handleDraftImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleDraftImageFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setDraft(prev => ({ ...prev, image: URL.createObjectURL(file) }));
+    try {
+      setDraftUploading(true);
+      const url = await uploadImageToCloudinary(file);
+      setDraft(prev => ({ ...prev, image: url }));
+    } catch {
+      alert('Error al subir imagen');
+    } finally {
+      setDraftUploading(false);
+    }
   }
 
   function getOptionName(groupId: number, optId: number) {
@@ -373,9 +363,13 @@ function ProductsManager({ section, allSections, onUpdate, onMove }: ProductsMan
                 className="w-14 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-navy hover:text-navy transition-colors"
                 title="Añadir foto"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                {productUploading === p.id ? (
+                  <span className="text-xs text-blue">...</span>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                )}
               </button>
             )}
             <input
@@ -466,8 +460,9 @@ function ProductsManager({ section, allSections, onUpdate, onMove }: ProductsMan
 
         <div>
           <label className="block text-sm font-medium text-gray-700 font-body mb-1">Foto</label>
-          <input ref={draftImgRef} type="file" accept="image/*" onChange={handleDraftImageFile} className={fileInputCls} />
-          {draft.image && <img src={draft.image} alt="Preview" className="mt-2 w-16 h-16 object-cover rounded-lg" />}
+          <input ref={draftImgRef} type="file" accept="image/*" onChange={handleDraftImageFile} disabled={draftUploading} className={fileInputCls} />
+          {draftUploading && <p className="mt-1 text-xs text-blue font-body">Subiendo imagen...</p>}
+          {draft.image && !draftUploading && <img src={draft.image} alt="Preview" className="mt-2 w-16 h-16 object-cover rounded-lg" />}
         </div>
 
         {section.sizes.length > 0 && (
@@ -524,11 +519,24 @@ function ProductsManager({ section, allSections, onUpdate, onMove }: ProductsMan
 type ActiveTab = 'productos' | 'tallas' | 'filtros';
 
 function AdminCatalogoPage() {
-  const [sections, setSections] = useState<CatalogSection[]>(INITIAL_SECTIONS);
-  const [activeId, setActiveId] = useState<number>(INITIAL_SECTIONS[0].id);
+  const [sections, setSections] = useState<CatalogSection[]>([]);
+  const [activeId, setActiveId] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<ActiveTab>('productos');
   const [newSectionName, setNewSectionName] = useState('');
   const [showNewSection, setShowNewSection] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getCatalogoConfig()
+      .then(cfg => {
+        const loaded = (cfg.sections ?? []) as CatalogSection[];
+        setSections(loaded);
+        if (loaded.length > 0) setActiveId(loaded[0].id);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const activeSection = sections.find(s => s.id === activeId) ?? sections[0];
 
@@ -580,10 +588,26 @@ function AdminCatalogoPage() {
     });
   }
 
+  async function handleSave() {
+    try {
+      setSaving(true);
+      await updateCatalogoConfig({ sections });
+      alert('Cambios guardados');
+    } catch {
+      alert('Error al guardar cambios');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const tabCls = (tab: ActiveTab) =>
     `px-4 py-2 text-sm font-body rounded-lg transition-colors ${
       activeTab === tab ? 'bg-navy text-white' : 'text-gray-600 hover:bg-gray-100'
     }`;
+
+  if (loading) {
+    return <div className="p-8 text-gray-400 font-body text-sm">Cargando...</div>;
+  }
 
   return (
     <div className="p-8">
@@ -633,112 +657,121 @@ function AdminCatalogoPage() {
         </div>
       )}
 
-      <div className="flex gap-6 items-start">
-        {/* Left sidebar — section list */}
-        <div className="w-56 shrink-0 bg-white rounded-xl shadow-sm p-3 flex flex-col gap-1">
-          <p className="text-xs font-body font-semibold text-gray-400 uppercase tracking-widest px-2 py-1">
-            Secciones
-          </p>
-          {sections.map((s, idx) => (
-            <div
-              key={s.id}
-              className={`group flex items-center gap-1 rounded-lg transition-colors ${
-                activeId === s.id ? 'bg-navy/10' : 'hover:bg-gray-50'
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => { setActiveId(s.id); setActiveTab('productos'); }}
-                className={`flex-1 text-left px-3 py-2 text-sm font-body truncate ${
-                  activeId === s.id ? 'text-navy font-semibold' : 'text-gray-700'
+      {sections.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm p-16 text-center text-gray-400 font-body text-sm">
+          Sin secciones. Crea la primera para empezar.
+        </div>
+      ) : (
+        <div className="flex gap-6 items-start">
+          {/* Left sidebar — section list */}
+          <div className="w-56 shrink-0 bg-white rounded-xl shadow-sm p-3 flex flex-col gap-1">
+            <p className="text-xs font-body font-semibold text-gray-400 uppercase tracking-widest px-2 py-1">
+              Secciones
+            </p>
+            {sections.map((s, idx) => (
+              <div
+                key={s.id}
+                className={`group flex items-center gap-1 rounded-lg transition-colors ${
+                  activeId === s.id ? 'bg-navy/10' : 'hover:bg-gray-50'
                 }`}
               >
-                {s.name}
-              </button>
-              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pr-1.5">
                 <button
                   type="button"
-                  onClick={() => moveSection(idx, -1)}
-                  disabled={idx === 0}
-                  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-navy disabled:opacity-30 text-xs"
+                  onClick={() => { setActiveId(s.id); setActiveTab('productos'); }}
+                  className={`flex-1 text-left px-3 py-2 text-sm font-body truncate ${
+                    activeId === s.id ? 'text-navy font-semibold' : 'text-gray-700'
+                  }`}
                 >
-                  ▲
+                  {s.name}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => moveSection(idx, 1)}
-                  disabled={idx === sections.length - 1}
-                  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-navy disabled:opacity-30 text-xs"
-                >
-                  ▼
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pr-1.5">
+                  <button
+                    type="button"
+                    onClick={() => moveSection(idx, -1)}
+                    disabled={idx === 0}
+                    className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-navy disabled:opacity-30 text-xs"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveSection(idx, 1)}
+                    disabled={idx === sections.length - 1}
+                    className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-navy disabled:opacity-30 text-xs"
+                  >
+                    ▼
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteSection(s.id)}
+                    disabled={sections.length <= 1}
+                    className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-red-500 disabled:opacity-30 text-sm"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Right panel — section editor */}
+          {activeSection && (
+            <div className="flex-1 min-w-0 flex flex-col gap-5">
+              {/* Section name */}
+              <div className="bg-white rounded-xl shadow-sm p-5">
+                <label className="block text-xs font-body font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                  Nombre de la sección
+                </label>
+                <input
+                  type="text"
+                  value={activeSection.name}
+                  onChange={e => renameSection(activeSection.id, e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-body font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-navy/30"
+                />
+              </div>
+
+              {/* Tabs */}
+              <div className="flex gap-2 bg-white rounded-xl shadow-sm p-3">
+                <button type="button" className={tabCls('productos')} onClick={() => setActiveTab('productos')}>
+                  Productos ({activeSection.products.length})
                 </button>
-                <button
-                  type="button"
-                  onClick={() => deleteSection(s.id)}
-                  disabled={sections.length <= 1}
-                  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-red-500 disabled:opacity-30 text-sm"
-                >
-                  ×
+                <button type="button" className={tabCls('tallas')} onClick={() => setActiveTab('tallas')}>
+                  Tallas ({activeSection.sizes.length})
+                </button>
+                <button type="button" className={tabCls('filtros')} onClick={() => setActiveTab('filtros')}>
+                  Filtros ({activeSection.filterGroups.length})
                 </button>
               </div>
+
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                {activeTab === 'tallas' && (
+                  <SizesManager section={activeSection} onUpdate={updateSection} />
+                )}
+                {activeTab === 'filtros' && (
+                  <FiltersManager section={activeSection} onUpdate={updateSection} />
+                )}
+                {activeTab === 'productos' && (
+                  <ProductsManager
+                    section={activeSection}
+                    allSections={sections}
+                    onUpdate={updateSection}
+                    onMove={moveProduct}
+                  />
+                )}
+              </div>
             </div>
-          ))}
+          )}
         </div>
-
-        {/* Right panel — section editor */}
-        <div className="flex-1 min-w-0 flex flex-col gap-5">
-          {/* Section name */}
-          <div className="bg-white rounded-xl shadow-sm p-5">
-            <label className="block text-xs font-body font-semibold text-gray-400 uppercase tracking-widest mb-3">
-              Nombre de la sección
-            </label>
-            <input
-              type="text"
-              value={activeSection.name}
-              onChange={e => renameSection(activeSection.id, e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-body font-semibold text-navy focus:outline-none focus:ring-2 focus:ring-navy/30"
-            />
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-2 bg-white rounded-xl shadow-sm p-3">
-            <button type="button" className={tabCls('productos')} onClick={() => setActiveTab('productos')}>
-              Productos ({activeSection.products.length})
-            </button>
-            <button type="button" className={tabCls('tallas')} onClick={() => setActiveTab('tallas')}>
-              Tallas ({activeSection.sizes.length})
-            </button>
-            <button type="button" className={tabCls('filtros')} onClick={() => setActiveTab('filtros')}>
-              Filtros ({activeSection.filterGroups.length})
-            </button>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            {activeTab === 'tallas' && (
-              <SizesManager section={activeSection} onUpdate={updateSection} />
-            )}
-            {activeTab === 'filtros' && (
-              <FiltersManager section={activeSection} onUpdate={updateSection} />
-            )}
-            {activeTab === 'productos' && (
-              <ProductsManager
-                section={activeSection}
-                allSections={sections}
-                onUpdate={updateSection}
-                onMove={moveProduct}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="mt-6">
         <button
           type="button"
-          onClick={() => alert('Cambios guardados (mock)')}
-          className="px-6 py-2.5 bg-navy text-white text-sm font-body rounded-lg hover:bg-blue transition-colors"
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-2.5 bg-navy text-white text-sm font-body rounded-lg hover:bg-blue transition-colors disabled:opacity-60"
         >
-          Guardar cambios
+          {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
       </div>
     </div>
