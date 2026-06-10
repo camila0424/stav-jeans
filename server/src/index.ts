@@ -31,6 +31,7 @@ app.use(cors({
   },
   credentials: true
 }))
+console.log('CORS origins:', [process.env.CLIENT_URL, 'http://localhost:5173'])
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '10mb' }))
 
