@@ -51,6 +51,7 @@ function toProduct(row: Record<string, unknown>) {
       name: categoryName,
       slug: slugify(categoryName),
     },
+    subcategory: (row.subcategory as string) ?? '',
     stock,
     sizes,
     colors,
@@ -120,13 +121,13 @@ export async function createProduct(req: Request, res: Response) {
   try {
     await client.query('BEGIN')
 
-    const { name, description, price, sale_price, category, is_active, is_featured, images, variants } = req.body
+    const { name, description, price, sale_price, category, subcategory, is_active, is_featured, images, variants } = req.body
     const slug = slugify(name as string)
 
     const { rows } = await client.query(
-      `INSERT INTO products (name, slug, description, price, sale_price, category, is_active, is_featured)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [name, slug, description, price, sale_price ?? null, category, is_active ?? true, is_featured ?? false]
+      `INSERT INTO products (name, slug, description, price, sale_price, category, subcategory, is_active, is_featured)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [name, slug, description, price, sale_price ?? null, category, subcategory ?? null, is_active ?? true, is_featured ?? false]
     )
     const product = rows[0]
 
@@ -167,14 +168,14 @@ export async function updateProduct(req: Request, res: Response) {
     await client.query('BEGIN')
 
     const { id } = req.params
-    const { name, description, price, sale_price, category, is_active, is_featured, images, variants } = req.body
+    const { name, description, price, sale_price, category, subcategory, is_active, is_featured, images, variants } = req.body
 
     const { rowCount } = await client.query(
       `UPDATE products
        SET name=$1, slug=$2, description=$3, price=$4, sale_price=$5, category=$6,
-           is_active=$7, is_featured=$8, updated_at=NOW()
-       WHERE id=$9`,
-      [name, slugify(name as string), description, price, sale_price ?? null, category, is_active ?? true, is_featured ?? false, id]
+           subcategory=$7, is_active=$8, is_featured=$9, updated_at=NOW()
+       WHERE id=$10`,
+      [name, slugify(name as string), description, price, sale_price ?? null, category, subcategory ?? null, is_active ?? true, is_featured ?? false, id]
     )
 
     if (!rowCount) {

@@ -14,12 +14,24 @@ interface FormVariant {
   stock: number;
 }
 
+const SUBCATEGORY_OPTIONS = [
+  'Pitillo',
+  'Mom / Mum',
+  'Wide leg (pernera ancha)',
+  'Straight (corte recto)',
+  'Barrel (bombacho)',
+  'Campana / Acampanado',
+  'Tobillero',
+  'Pernera cónica',
+];
+
 interface FormState {
   name: string;
   description: string;
   price: string;
   salePrice: string;
   category: string;
+  subcategory: string;
   isActive: boolean;
   isFeatured: boolean;
   images: (string | null)[];
@@ -32,6 +44,7 @@ const EMPTY_FORM: FormState = {
   price: '',
   salePrice: '',
   category: '',
+  subcategory: '',
   isActive: true,
   isFeatured: false,
   images: [null, null, null, null, null, null],
@@ -91,6 +104,7 @@ function AdminProductForm() {
           price: String(product.price),
           salePrice: product.salePrice ? String(product.salePrice) : '',
           category: product.category.name,
+          subcategory: (product as { subcategory?: string }).subcategory ?? '',
           isActive: product.isActive,
           isFeatured: product.isFeatured,
           images,
@@ -104,6 +118,13 @@ function AdminProductForm() {
   function handleFieldChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+  }
+
+  function handleCategoryChange(e: ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value;
+    const cat = categories.find(c => c.name === value);
+    const isVaqueros = cat?.slug === 'vaqueros' || cat?.name === 'Vaqueros';
+    setForm(prev => ({ ...prev, category: value, subcategory: isVaqueros ? prev.subcategory : '' }));
   }
 
   function handleImageSelect(index: number, e: ChangeEvent<HTMLInputElement>) {
@@ -180,6 +201,7 @@ function AdminProductForm() {
         price: parseFloat(form.price),
         sale_price: form.salePrice ? parseFloat(form.salePrice) : null,
         category: form.category,
+        subcategory: form.subcategory || null,
         is_active: form.isActive,
         is_featured: form.isFeatured,
         images: uploadedImages,
@@ -331,7 +353,7 @@ function AdminProductForm() {
               required
               disabled={loadingCategories || categoriesError}
               value={form.category}
-              onChange={handleFieldChange}
+              onChange={handleCategoryChange}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-body focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy bg-white disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loadingCategories && <option value="">Cargando categorías…</option>}
@@ -346,6 +368,26 @@ function AdminProductForm() {
               )}
             </select>
           </div>
+
+          {categories.find(c => c.name === form.category)?.slug === 'vaqueros' && (
+            <div>
+              <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 font-body mb-1.5">
+                Tipo de vaquero
+              </label>
+              <select
+                id="subcategory"
+                name="subcategory"
+                value={form.subcategory}
+                onChange={handleFieldChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-body focus:outline-none focus:ring-2 focus:ring-navy/30 focus:border-navy bg-white"
+              >
+                <option value="">Seleccionar tipo…</option>
+                {SUBCATEGORY_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">

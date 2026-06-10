@@ -15,6 +15,7 @@ export async function initDB(): Promise<void> {
       ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT;
       ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_price DECIMAL(10,2);
       ALTER TABLE products ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT false;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory VARCHAR(100);
     `)
 
     await pool.query(`
