@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { uploadImage, deleteImage } from '../services/cloudinary.service'
 
 export async function uploadProductImage(req: Request, res: Response) {
+  console.log('upload request received, image length:', req.body?.image?.length)
   try {
     const { image, folder } = req.body
 
