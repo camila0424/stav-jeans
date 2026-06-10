@@ -5,13 +5,15 @@ import {
   createPromotion,
   updatePromotion,
   deletePromotion,
-  sendPromotionToAll
+  sendPromotionToAll,
+  validatePromoCode
 } from '../controllers/promotions.controller'
 import { verifyToken } from '../middleware/auth.middleware'
 
 const router = Router()
 
 router.get('/active', getActivePromotions)
+router.post('/validate', validatePromoCode)
 router.get('/', verifyToken, getAllPromotions)
 router.post('/', verifyToken, createPromotion)
 router.put('/:id', verifyToken, updatePromotion)

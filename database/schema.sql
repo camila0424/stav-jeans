@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS promotions (
   image_url VARCHAR(500),
   start_date TIMESTAMP,
   end_date TIMESTAMP,
+  code VARCHAR(50) UNIQUE,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW()
 );

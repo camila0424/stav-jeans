@@ -13,7 +13,7 @@ import { errorHandler } from './middleware/error.middleware'
 dotenv.config()
 
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 
 app.use(cors({ origin: process.env.CLIENT_URL }))
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))

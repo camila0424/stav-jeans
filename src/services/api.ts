@@ -134,5 +134,5 @@ export function subscribeEmail(email: string): Promise<{ message: string }> {
 // ── Códigos de descuento ───────────────────────────────────────────────────
 
 export function validatePromoCode(code: string) {
-  return request(`/promo-codes/validate/?code=${code}`);
+  return request(`/promotions/validate/?code=${code}`);
 }

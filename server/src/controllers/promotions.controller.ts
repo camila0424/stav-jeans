@@ -76,6 +76,38 @@ export async function deletePromotion(req: Request, res: Response) {
   }
 }
 
+export async function validatePromoCode(req: Request, res: Response) {
+  try {
+    const { code } = req.body
+    if (!code) {
+      return res.status(400).json({ valid: false, message: 'Código no válido o expirado' })
+    }
+
+    const result = await pool.query(`
+      SELECT code, discount_type, discount_value FROM promotions
+      WHERE UPPER(code) = UPPER($1)
+        AND is_active = true
+        AND (start_date IS NULL OR start_date <= NOW())
+        AND (end_date IS NULL OR end_date >= NOW())
+      LIMIT 1
+    `, [code])
+
+    if (result.rows.length === 0) {
+      return res.json({ valid: false, message: 'Código no válido o expirado' })
+    }
+
+    const promo = result.rows[0]
+    return res.json({
+      valid: true,
+      discount: promo.discount_value,
+      type: promo.discount_type as 'percentage' | 'fixed',
+      code: promo.code,
+    })
+  } catch (error) {
+    res.status(500).json({ error: 'Error al validar código' })
+  }
+}
+
 export async function sendPromotionToAll(req: Request, res: Response) {
   try {
     const { id } = req.params
