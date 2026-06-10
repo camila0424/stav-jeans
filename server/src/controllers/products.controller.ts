@@ -120,7 +120,6 @@ export async function createProduct(req: Request, res: Response) {
   try {
     await client.query('BEGIN')
 
-    console.log('createProduct body:', req.body)
     const { name, description, price, sale_price, category, is_active, is_featured, images, variants } = req.body
     const slug = slugify(name as string)
 
