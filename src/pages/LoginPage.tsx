@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const ADMIN_EMAIL = 'admin@stavjeans.com';
-const ADMIN_PASSWORD = 'stavjeans2024';
+const ADMIN_EMAIL = 'stavjeans.info@gmail.com';
+const ADMIN_PASSWORD = 'DinaStavJeans2021';
 
 function LoginPage() {
   const navigate = useNavigate();
