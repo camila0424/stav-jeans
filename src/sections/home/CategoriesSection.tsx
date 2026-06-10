@@ -2,18 +2,18 @@ import { Link } from 'react-router-dom';
 
 const CATEGORIES = [
   {
-    label: 'Skinny',
-    slug: 'skinny',
+    label: 'Oferta del mes',
+    to: '/oferta',
     image: 'https://images.unsplash.com/photo-1520006403909-838d6b92c22e?w=800&q=80',
   },
   {
-    label: 'Mom Fit',
-    slug: 'mom-fit',
+    label: 'Colección de temporada',
+    to: '/coleccion',
     image: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?w=800&q=80',
   },
   {
-    label: 'Wide Leg',
-    slug: 'wide-leg',
+    label: 'Catálogo',
+    to: '/tienda',
     image: 'https://images.unsplash.com/photo-1509551388413-e18d0ac5d495?w=800&q=80',
   },
 ] as const;
@@ -25,10 +25,10 @@ function CategoriesSection() {
         Categorías destacadas
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {CATEGORIES.map(({ label, slug, image }) => (
+        {CATEGORIES.map(({ label, to, image }) => (
           <Link
-            key={slug}
-            to={`/tienda?categoria=${slug}`}
+            key={to}
+            to={to}
             className="card group relative h-125 overflow-hidden flex items-end"
           >
             <img

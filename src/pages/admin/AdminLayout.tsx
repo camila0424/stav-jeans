@@ -5,6 +5,9 @@ const navLinks = [
   { to: '/admin/productos', label: 'Productos', icon: '👖', end: false },
   { to: '/admin/pedidos', label: 'Pedidos', icon: '📦', end: false },
   { to: '/admin/hero', label: 'Hero', icon: '🖼️', end: false },
+  { to: '/admin/oferta', label: 'Oferta', icon: '🏷️', end: false },
+  { to: '/admin/coleccion', label: 'Colección', icon: '✨', end: false },
+  { to: '/admin/catalogo', label: 'Catálogo', icon: '📋', end: false },
 ];
 
 function linkClass({ isActive }: { isActive: boolean }) {
