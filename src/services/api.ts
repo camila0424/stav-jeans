@@ -93,7 +93,10 @@ export function adminCreateProduct(data: ProductPayload): Promise<Product> {
   return request<Product>('/products/', {
     method: 'POST',
     body: JSON.stringify(data),
-    headers: getAdminAuthHeaders(),
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAdminAuthHeaders(),
+    },
   });
 }
 
@@ -101,7 +104,10 @@ export function adminUpdateProduct(id: number, data: ProductPayload): Promise<Pr
   return request<Product>(`/products/${id}/`, {
     method: 'PUT',
     body: JSON.stringify(data),
-    headers: getAdminAuthHeaders(),
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAdminAuthHeaders(),
+    },
   });
 }
 
