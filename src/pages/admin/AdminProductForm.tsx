@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProductById, adminCreateProduct, adminUpdateProduct, adminUploadImage } from '../../services/api';
+import { getProductById, adminCreateProduct, adminUpdateProduct, uploadImageToCloudinary } from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const CATEGORIES = ['Skinny', 'Bota Recta', 'Mom Fit', 'Wide Leg', 'Straight'];
@@ -38,16 +38,6 @@ const EMPTY_FORM: FormState = {
   variants: [],
 };
 
-async function blobToBase64(blobUrl: string): Promise<string> {
-  const res = await fetch(blobUrl);
-  const blob = await res.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
 
 function AdminProductForm() {
   const { id } = useParams<{ id: string }>();
@@ -67,6 +57,7 @@ function AdminProductForm() {
   });
 
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const filesRef = useRef<(File | null)[]>([null, null, null, null, null, null]);
   const variantIdCounter = useRef(1000);
 
   useEffect(() => {
@@ -107,6 +98,7 @@ function AdminProductForm() {
   function handleImageSelect(index: number, e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    filesRef.current[index] = file;
     const url = URL.createObjectURL(file);
     setForm(prev => {
       const images = [...prev.images];
@@ -117,6 +109,7 @@ function AdminProductForm() {
   }
 
   function removeImage(index: number) {
+    filesRef.current[index] = null;
     setForm(prev => {
       const images = [...prev.images];
       images[index] = null;
@@ -157,11 +150,13 @@ function AdminProductForm() {
     try {
       // Upload any new blob images to Cloudinary
       const uploadedImages: string[] = [];
-      for (const img of form.images) {
+      for (let i = 0; i < form.images.length; i++) {
+        const img = form.images[i];
         if (!img) continue;
         if (img.startsWith('blob:')) {
-          const base64 = await blobToBase64(img);
-          const { url } = await adminUploadImage(base64);
+          const file = filesRef.current[i];
+          if (!file) continue;
+          const url = await uploadImageToCloudinary(file);
           uploadedImages.push(url);
         } else {
           uploadedImages.push(img);

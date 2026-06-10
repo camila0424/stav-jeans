@@ -129,6 +129,21 @@ export function adminUploadImage(
   });
 }
 
+export async function uploadImageToCloudinary(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET)
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/dh5xe3fva/image/upload`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) throw new Error('Error subiendo imagen a Cloudinary')
+  const data = await res.json()
+  return data.secure_url
+}
+
 // ── Auth ───────────────────────────────────────────────────────────────────
 
 export function loginAdmin(data: {
