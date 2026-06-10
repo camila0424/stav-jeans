@@ -1,5 +1,5 @@
 import { useState, useRef, type ChangeEvent, type FormEvent } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 const CATEGORIES = ['Skinny', 'Bota Recta', 'Mom Fit', 'Wide Leg', 'Straight'];
 const SIZES = ['34', '36', '38', '40', '42', '44'];
@@ -41,7 +41,6 @@ const MOCK_PRODUCT: FormState = {
 
 function AdminProductForm() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const isEditing = Boolean(id);
 
   const [form, setForm] = useState<FormState>(() =>
