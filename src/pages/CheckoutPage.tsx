@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCart from '../hooks/useCart';
 import Button from '../components/common/Button';
@@ -25,10 +25,13 @@ function CheckoutPage() {
     notes: '',
   });
 
-  if (items.length === 0) {
-    navigate('/carrito');
-    return null;
-  }
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate('/carrito');
+    }
+  }, [items, navigate]);
+
+  if (items.length === 0) return null;
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
