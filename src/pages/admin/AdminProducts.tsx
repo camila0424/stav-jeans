@@ -138,7 +138,7 @@ function AdminProducts() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Link
-                          to={`/admin/productos/${product.id}/editar`}
+                          to={`/admin/productos/${product.id}`}
                           className="text-navy text-xs font-medium hover:underline"
                         >
                           Editar

@@ -86,7 +86,14 @@ function AdminProductForm() {
   }, []);
 
   useEffect(() => {
-    if (!isEditing || !id) return;
+    setForm(EMPTY_FORM);
+    filesRef.current = [null, null, null, null, null, null];
+    setSaveError(null);
+
+    if (!id) {
+      setLoadingProduct(false);
+      return;
+    }
 
     setLoadingProduct(true);
     getProductById(id)
@@ -114,7 +121,7 @@ function AdminProductForm() {
       })
       .catch(() => setSaveError('No se pudo cargar el producto'))
       .finally(() => setLoadingProduct(false));
-  }, [id, isEditing]);
+  }, [id]);
 
   function handleFieldChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target;
