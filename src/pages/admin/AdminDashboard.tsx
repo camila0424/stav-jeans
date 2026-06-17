@@ -115,7 +115,7 @@ function AdminDashboard() {
               const s = STATUS_LABELS[order.status] ?? { label: order.status, className: 'bg-gray-100 text-gray-600' };
               return (
                 <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-navy">#{order.id}</td>
+                  <td className="px-6 py-4 font-medium text-navy">Pedido #{order.id.slice(0, 8).toUpperCase()}</td>
                   <td className="px-6 py-4 text-gray-700">{order.customer_name}</td>
                   <td className="px-6 py-4 text-gray-500">{formatDate(order.created_at)}</td>
                   <td className="px-6 py-4 text-gray-700 font-medium">{formatCurrency(order.total)}</td>

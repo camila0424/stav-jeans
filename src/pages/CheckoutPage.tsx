@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCart from '../hooks/useCart';
 import Button from '../components/common/Button';
@@ -14,6 +14,7 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const orderCompleted = useRef(false);
 
   const [form, setForm] = useState<CheckoutFormData>({
     name: '',
@@ -26,12 +27,12 @@ function CheckoutPage() {
   });
 
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !orderCompleted.current) {
       navigate('/carrito');
     }
   }, [items, navigate]);
 
-  if (items.length === 0) return null;
+  if (items.length === 0 && !orderCompleted.current) return null;
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -44,6 +45,7 @@ function CheckoutPage() {
     setError(null);
     try {
       const order = await createOrder(form, items);
+      orderCompleted.current = true;
       clearCart();
       navigate('/pedido-confirmado', { state: { orderId: order.id } });
     } catch (err) {

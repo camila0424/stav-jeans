@@ -43,7 +43,7 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: number;
+  id: string;
   user: number;
   items: OrderItem[];
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';

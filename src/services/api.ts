@@ -262,7 +262,7 @@ export function getMyOrders(): Promise<Order[]> {
   return request<Order[]>('/orders/', { headers: getAuthHeaders() });
 }
 
-export function getOrderById(id: number): Promise<Order> {
+export function getOrderById(id: string): Promise<Order> {
   return request<Order>(`/orders/${id}/`, { headers: getAuthHeaders() });
 }
 
@@ -382,7 +382,7 @@ export interface DashboardStats {
   total_orders: number;
   total_revenue: number;
   recent_orders: Array<{
-    id: number;
+    id: string;
     customer_name: string;
     created_at: string;
     total: number;
@@ -397,7 +397,7 @@ export function getDashboardStats(): Promise<DashboardStats> {
 // ── Pedidos (admin) ────────────────────────────────────────────────────────
 
 export interface AdminOrder {
-  id: number;
+  id: string;
   customer_name: string;
   customer_email: string;
   created_at: string;
@@ -410,7 +410,7 @@ export function getAdminOrders(): Promise<AdminOrder[]> {
   return request<AdminOrder[]>('/orders/', { headers: getAdminAuthHeaders() });
 }
 
-export function updateAdminOrderStatus(id: number, status: string): Promise<AdminOrder> {
+export function updateAdminOrderStatus(id: string, status: string): Promise<AdminOrder> {
   return request<AdminOrder>(`/orders/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),

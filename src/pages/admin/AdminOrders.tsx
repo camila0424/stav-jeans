@@ -15,7 +15,11 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string }> =
 const ALL_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatPrice(n: number) {
+  return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }
 
 function AdminOrders() {
@@ -30,7 +34,7 @@ function AdminOrders() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleStatusChange(id: number, status: OrderStatus) {
+  async function handleStatusChange(id: string, status: OrderStatus) {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
     try {
       await updateAdminOrderStatus(id, status);
@@ -100,12 +104,12 @@ function AdminOrders() {
               const s = STATUS_CONFIG[order.status];
               return (
                 <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-navy">#{order.id}</td>
+                  <td className="px-6 py-4 font-medium text-navy">Pedido #{order.id.slice(0, 8).toUpperCase()}</td>
                   <td className="px-6 py-4 text-gray-700">{order.customer_name}</td>
                   <td className="px-6 py-4 text-gray-500">{formatDate(order.created_at)}</td>
                   <td className="px-6 py-4 text-gray-500">{order.items?.length ?? 0} art.</td>
                   <td className="px-6 py-4 font-medium text-gray-700">
-                    ${order.total.toLocaleString('es-CO')}
+                    {formatPrice(order.total)}
                   </td>
                   <td className="px-6 py-4">
                     <select

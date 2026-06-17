@@ -4,7 +4,7 @@ import Button from '../components/common/Button';
 function OrderConfirmationPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const orderId = (location.state as { orderId?: number } | null)?.orderId;
+  const orderId = (location.state as { orderId?: string } | null)?.orderId;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-20 text-center">
@@ -24,8 +24,9 @@ function OrderConfirmationPage() {
 
       {orderId != null && (
         <p className="text-gray-500 text-sm mb-2">
-          Número de pedido:{' '}
-          <span className="font-semibold text-navy">#{orderId}</span>
+          <span className="font-semibold text-navy">
+            Pedido #{orderId.slice(0, 8).toUpperCase()}
+          </span>
         </p>
       )}
 
