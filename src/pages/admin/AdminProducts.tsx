@@ -19,7 +19,7 @@ function AdminProducts() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     if (!window.confirm('¿Eliminar este producto?')) return;
     try {
       await adminDeleteProduct(id);
@@ -113,7 +113,7 @@ function AdminProducts() {
 
                     {/* Precio */}
                     <td className="px-6 py-4 text-gray-700 font-medium">
-                      ${product.price.toLocaleString('es-CO')}
+                      {product.price.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                     </td>
 
                     {/* Categoría */}

@@ -226,7 +226,7 @@ function AdminProductForm() {
       };
 
       if (isEditing && id) {
-        await adminUpdateProduct(parseInt(id, 10), payload);
+        await adminUpdateProduct(id, payload);
       } else {
         await adminCreateProduct(payload);
       }

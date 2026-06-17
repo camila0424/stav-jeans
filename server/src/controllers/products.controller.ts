@@ -39,7 +39,7 @@ function toProduct(row: Record<string, unknown>) {
   const categoryName = (row.category as string) ?? ''
 
   return {
-    id: row.id as number,
+    id: row.id as string,
     name: row.name as string,
     slug: (row.slug as string) || slugify(row.name as string),
     description: (row.description as string) ?? '',
@@ -94,11 +94,14 @@ export async function getAllProducts(req: Request, res: Response) {
   }
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function getProductById(req: Request, res: Response) {
   try {
     const { id } = req.params
     const isNumeric = /^\d+$/.test(id)
-    const condition = isNumeric ? 'p.id = $1' : 'p.slug = $1'
+    const isUUID = UUID_REGEX.test(id)
+    const condition = (isNumeric || isUUID) ? 'p.id = $1' : 'p.slug = $1'
     const param = isNumeric ? parseInt(id, 10) : id
 
     const result = await pool.query(

@@ -100,7 +100,7 @@ export function adminCreateProduct(data: ProductPayload): Promise<Product> {
   });
 }
 
-export function adminUpdateProduct(id: number, data: ProductPayload): Promise<Product> {
+export function adminUpdateProduct(id: string, data: ProductPayload): Promise<Product> {
   return request<Product>(`/products/${id}/`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -111,7 +111,7 @@ export function adminUpdateProduct(id: number, data: ProductPayload): Promise<Pr
   });
 }
 
-export function adminDeleteProduct(id: number): Promise<{ message: string }> {
+export function adminDeleteProduct(id: string): Promise<{ message: string }> {
   return request<{ message: string }>(`/products/${id}/`, {
     method: 'DELETE',
     headers: getAdminAuthHeaders(),
