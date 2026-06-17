@@ -21,6 +21,7 @@ function Footer() {
               { to: '/tienda', label: 'Tienda' },
               { to: '/nosotras', label: 'Nosotras' },
               { to: '/contacto', label: 'Contacto' },
+              { to: '/seguimiento', label: 'Seguir mi pedido' },
             ].map(({ to, label }) => (
               <li key={to}>
                 <Link to={to} className="hover:text-yellow transition-colors">

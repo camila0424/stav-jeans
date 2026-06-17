@@ -3,12 +3,14 @@ import {
   getAllOrders,
   getOrderById,
   createOrder,
-  updateOrderStatus
+  updateOrderStatus,
+  trackOrder
 } from '../controllers/orders.controller'
 import { verifyToken } from '../middleware/auth.middleware'
 
 const router = Router()
 
+router.get('/track', trackOrder)
 router.get('/', verifyToken, getAllOrders)
 router.get('/:id', verifyToken, getOrderById)
 router.post('/', createOrder)

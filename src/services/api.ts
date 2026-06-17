@@ -394,6 +394,25 @@ export function getDashboardStats(): Promise<DashboardStats> {
   return request<DashboardStats>('/dashboard/stats', { headers: getAdminAuthHeaders() });
 }
 
+// ── Seguimiento público de pedido ─────────────────────────────────────────
+
+export interface TrackedOrder {
+  id: string;
+  short_code: string;
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  created_at: string;
+  items: Array<{ product_name: string; quantity: number; unit_price: number; size: string; color: string }>;
+  subtotal: number;
+  shipping: number;
+  total: number;
+}
+
+export function trackOrder(code: string, email: string): Promise<TrackedOrder> {
+  return request<TrackedOrder>(
+    `/orders/track?code=${encodeURIComponent(code.trim())}&email=${encodeURIComponent(email.trim())}`
+  );
+}
+
 // ── Pedidos (admin) ────────────────────────────────────────────────────────
 
 export interface AdminOrder {

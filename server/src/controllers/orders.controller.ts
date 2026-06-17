@@ -1,6 +1,61 @@
 import { Request, Response } from 'express'
 import pool from '../db/connection'
 
+export async function trackOrder(req: Request, res: Response) {
+  try {
+    const { code, email } = req.query as { code?: string; email?: string }
+
+    if (!code || !email) {
+      return res.status(400).json({ error: 'Parámetros requeridos: code, email' })
+    }
+
+    const result = await pool.query(`
+      SELECT
+        o.id,
+        o.status,
+        o.created_at,
+        o.subtotal,
+        o.shipping,
+        o.total,
+        json_agg(
+          json_build_object(
+            'product_name', p.name,
+            'quantity', oi.quantity,
+            'unit_price', oi.unit_price,
+            'size', pv.size,
+            'color', pv.color
+          )
+        ) as items
+      FROM orders o
+      LEFT JOIN customers c ON c.id = o.customer_id
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN products p ON p.id = oi.product_id
+      LEFT JOIN product_variants pv ON pv.id = oi.variant_id
+      WHERE LOWER(LEFT(o.id::text, 8)) = LOWER($1)
+        AND LOWER(c.email) = LOWER($2)
+      GROUP BY o.id
+    `, [code.trim(), email.trim()])
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pedido no encontrado' })
+    }
+
+    const o = result.rows[0]
+    res.json({
+      id: o.id,
+      short_code: (o.id as string).slice(0, 8).toUpperCase(),
+      status: o.status,
+      created_at: o.created_at,
+      items: o.items,
+      subtotal: o.subtotal,
+      shipping: o.shipping,
+      total: o.total,
+    })
+  } catch {
+    res.status(500).json({ error: 'Error al buscar el pedido' })
+  }
+}
+
 export async function getAllOrders(_req: Request, res: Response) {
   try {
     const result = await pool.query(`

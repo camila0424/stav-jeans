@@ -21,6 +21,7 @@ import AdminCatalogoPage from './pages/admin/AdminCatalogoPage';
 import OfertaPage from './pages/OfertaPage';
 import ColeccionPage from './pages/ColeccionPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import OrderTrackingPage from './pages/OrderTrackingPage';
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
           <Route path="/carrito" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/pedido-confirmado" element={<OrderConfirmationPage />} />
+          <Route path="/seguimiento" element={<OrderTrackingPage />} />
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
