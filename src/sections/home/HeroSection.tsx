@@ -13,13 +13,17 @@ const DEFAULTS: HeroConfig = {
 };
 
 function HeroSection() {
-  const [hero, setHero] = useState<HeroConfig>(DEFAULTS);
+  const [hero, setHero] = useState<HeroConfig | null>(null);
 
   useEffect(() => {
     getHeroConfig()
       .then(data => setHero({ ...DEFAULTS, ...data }))
-      .catch(() => { });
+      .catch(() => setHero(DEFAULTS));
   }, []);
+
+  if (!hero) {
+    return <section className="h-screen bg-gray-200" />;
+  }
 
   return (
     <section
