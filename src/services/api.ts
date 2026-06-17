@@ -139,8 +139,16 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
     body: formData,
   })
 
-  if (!res.ok) throw new Error('Error subiendo imagen a Cloudinary')
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const body = await res.json();
+      detail = body?.error?.message ?? '';
+    } catch { /* ignore */ }
+    throw new Error(`Error subiendo imagen a Cloudinary${detail ? `: ${detail}` : ` (HTTP ${res.status})`}`)
+  }
   const data = await res.json()
+  if (!data.secure_url) throw new Error('Cloudinary no devolvió URL de imagen. Verifica el upload preset.')
   return data.secure_url
 }
 

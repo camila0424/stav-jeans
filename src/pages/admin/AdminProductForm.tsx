@@ -60,6 +60,7 @@ function AdminProductForm() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [loadingProduct, setLoadingProduct] = useState(isEditing);
   const [saving, setSaving] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -180,20 +181,24 @@ function AdminProductForm() {
     setSaveError(null);
 
     try {
-      // Upload any new blob images to Cloudinary
       const uploadedImages: string[] = [];
+      const hasBlobImages = form.images.some(img => img?.startsWith('blob:'));
+      if (hasBlobImages) setUploadingImages(true);
+
       for (let i = 0; i < form.images.length; i++) {
         const img = form.images[i];
         if (!img) continue;
         if (img.startsWith('blob:')) {
           const file = filesRef.current[i];
-          if (!file) continue;
+          if (!file) throw new Error(`No se pudo recuperar la imagen ${i + 1}. Por favor, vuelve a seleccionarla.`);
           const url = await uploadImageToCloudinary(file);
           uploadedImages.push(url);
         } else {
           uploadedImages.push(img);
         }
       }
+
+      setUploadingImages(false);
 
       const payload = {
         name: form.name,
@@ -222,6 +227,7 @@ function AdminProductForm() {
       navigate('/admin/productos');
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Error al guardar producto');
+      setUploadingImages(false);
     } finally {
       setSaving(false);
     }
@@ -578,10 +584,10 @@ function AdminProductForm() {
         <div className="flex items-center gap-3">
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || uploadingImages}
             className="px-6 py-2.5 bg-navy text-white text-sm font-body rounded-lg hover:bg-navy/90 transition-colors disabled:opacity-60"
           >
-            {saving ? 'Guardando…' : 'Guardar'}
+            {uploadingImages ? 'Subiendo imágenes…' : saving ? 'Guardando…' : 'Guardar'}
           </button>
           <Link
             to="/admin/productos"
