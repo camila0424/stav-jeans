@@ -201,14 +201,60 @@ export function getProfile(): Promise<User> {
 
 // ── Órdenes ────────────────────────────────────────────────────────────────
 
-export function createOrder(data: {
-  items: CartItem[];
-  promoCode?: string;
-}): Promise<Order> {
+export interface CheckoutFormData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postal_code: string;
+  notes?: string;
+}
+
+export function createOrder(formData: CheckoutFormData, items: CartItem[]): Promise<Order> {
+  const orderItems = items.map(item => {
+    const variants = item.product.variants;
+    if (!variants || variants.length === 0) {
+      throw new Error(
+        `El producto "${item.product.name}" no tiene variantes disponibles. Recarga la página e inténtalo de nuevo.`
+      );
+    }
+    const variant = variants.find(v => v.size === item.size && v.color === item.color);
+    if (!variant) {
+      throw new Error(
+        `No se encontró la variante talla ${item.size} / color ${item.color} para "${item.product.name}".`
+      );
+    }
+    if (variant.id == null) {
+      throw new Error(
+        `La variante de "${item.product.name}" no tiene un ID válido. Recarga la página e inténtalo de nuevo.`
+      );
+    }
+    return {
+      product_id: item.product.id,
+      variant_id: variant.id,
+      quantity: item.quantity,
+      unit_price: item.product.salePrice ?? item.product.price,
+    };
+  });
+
+  const payload = {
+    customer: {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      city: formData.city,
+      postal_code: formData.postal_code,
+    },
+    items: orderItems,
+    payment_method: 'bizum_transferencia',
+    notes: formData.notes ?? '',
+  };
+
   return request<Order>('/orders/', {
     method: 'POST',
-    body: JSON.stringify(data),
-    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
   });
 }
 
