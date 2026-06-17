@@ -1,6 +1,18 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { CartItem, Product } from '../types';
+
+const CART_STORAGE_KEY = 'stav_cart';
+
+function loadFromStorage(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as CartItem[];
+  } catch {
+    return [];
+  }
+}
 
 interface CartContextValue {
   items: CartItem[];
@@ -15,7 +27,11 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null);
 
 function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(loadFromStorage);
+
+  useEffect(() => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
 
   const addItem = useCallback(
     (product: Product, quantity: number, size: string, color: string) => {
@@ -61,7 +77,10 @@ function CartProvider({ children }: { children: ReactNode }) {
     [removeItem]
   );
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => {
+    setItems([]);
+    localStorage.removeItem(CART_STORAGE_KEY);
+  }, []);
 
   const total = items.reduce(
     (sum, i) => sum + (i.product.salePrice ?? i.product.price) * i.quantity,

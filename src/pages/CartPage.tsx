@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { CartItem } from '../types';
 import useCart from '../hooks/useCart';
 import Button from '../components/common/Button';
@@ -72,6 +72,7 @@ function EmptyCart() {
 
 function CartPage() {
   const { items, removeItem, updateQuantity, total } = useCart();
+  const navigate = useNavigate();
 
   if (items.length === 0) {
     return <EmptyCart />;
@@ -174,7 +175,15 @@ function CartPage() {
               </div>
             </dl>
 
-            <Button onClick={handleWhatsApp} size="lg" className="w-full mt-6">
+            <Button size="lg" className="w-full mt-6" onClick={() => navigate('/checkout')}>
+              Finalizar compra
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              className="w-full mt-3"
+              onClick={handleWhatsApp}
+            >
               Finalizar por WhatsApp
             </Button>
             <Link to="/tienda" className="block mt-3">
