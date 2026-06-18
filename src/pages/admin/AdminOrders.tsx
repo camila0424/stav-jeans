@@ -19,7 +19,7 @@ function formatDate(iso: string) {
 }
 
 function formatPrice(n: number) {
-  return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+  return Number(n).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }
 
 function AdminOrders() {

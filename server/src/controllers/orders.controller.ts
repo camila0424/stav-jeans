@@ -177,20 +177,55 @@ export async function createOrder(req: Request, res: Response) {
 }
 
 export async function updateOrderStatus(req: Request, res: Response) {
+  const client = await pool.connect()
   try {
+    await client.query('BEGIN')
+
     const { id } = req.params
     const { status } = req.body
 
-    const result = await pool.query(`
+    const currentResult = await client.query(
+      'SELECT status FROM orders WHERE id = $1 FOR UPDATE', [id]
+    )
+
+    if (currentResult.rows.length === 0) {
+      await client.query('ROLLBACK')
+      return res.status(404).json({ error: 'Orden no encontrada' })
+    }
+
+    const currentStatus: string = currentResult.rows[0].status
+
+    if (currentStatus !== status) {
+      if (status === 'cancelled' && currentStatus !== 'cancelled') {
+        // Restore stock when cancelling
+        await client.query(`
+          UPDATE product_variants pv
+          SET stock = pv.stock + oi.quantity
+          FROM order_items oi
+          WHERE oi.order_id = $1 AND pv.id = oi.variant_id
+        `, [id])
+      } else if (currentStatus === 'cancelled' && status !== 'cancelled') {
+        // Deduct stock when un-cancelling
+        await client.query(`
+          UPDATE product_variants pv
+          SET stock = pv.stock - oi.quantity
+          FROM order_items oi
+          WHERE oi.order_id = $1 AND pv.id = oi.variant_id
+        `, [id])
+      }
+    }
+
+    const result = await client.query(`
       UPDATE orders SET status = $1, updated_at = NOW()
       WHERE id = $2 RETURNING *
     `, [status, id])
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Orden no encontrada' })
-    }
+    await client.query('COMMIT')
     res.json(result.rows[0])
   } catch (error) {
+    await client.query('ROLLBACK')
     res.status(500).json({ error: 'Error al actualizar orden' })
+  } finally {
+    client.release()
   }
 }
