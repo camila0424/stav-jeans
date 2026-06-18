@@ -101,6 +101,8 @@ export function adminCreateProduct(data: ProductPayload): Promise<Product> {
 }
 
 export function adminUpdateProduct(id: string, data: ProductPayload): Promise<Product> {
+  // TEMP DEBUG - quitar después
+  console.log('[DEBUG adminUpdateProduct]', { idRecibido: id, typeofId: typeof id, urlConstruida: `/products/${id}/` });
   return request<Product>(`/products/${id}/`, {
     method: 'PUT',
     body: JSON.stringify(data),
