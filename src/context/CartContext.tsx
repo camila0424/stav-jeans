@@ -17,8 +17,8 @@ function loadFromStorage(): CartItem[] {
 interface CartContextValue {
   items: CartItem[];
   addItem: (product: Product, quantity: number, size: string, color: string) => void;
-  removeItem: (productId: number, size: string, color: string) => void;
-  updateQuantity: (productId: number, size: string, color: string, quantity: number) => void;
+  removeItem: (productId: string, size: string, color: string) => void;
+  updateQuantity: (productId: string, size: string, color: string, quantity: number) => void;
   clearCart: () => void;
   total: number;
   itemCount: number;
@@ -52,7 +52,7 @@ function CartProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const removeItem = useCallback((productId: number, size: string, color: string) => {
+  const removeItem = useCallback((productId: string, size: string, color: string) => {
     setItems(prev =>
       prev.filter(
         i => !(i.product.id === productId && i.size === size && i.color === color)
@@ -61,7 +61,7 @@ function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateQuantity = useCallback(
-    (productId: number, size: string, color: string, quantity: number) => {
+    (productId: string, size: string, color: string, quantity: number) => {
       if (quantity <= 0) {
         removeItem(productId, size, color);
         return;

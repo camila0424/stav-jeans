@@ -72,7 +72,7 @@ function ShopPage() {
     } else if (sortBy === 'price-desc') {
       result.sort((a, b) => (b.salePrice ?? b.price) - (a.salePrice ?? a.price));
     } else {
-      result.sort((a, b) => b.id - a.id);
+      // keep API order (newest first as returned by the server)
     }
 
     return result;
