@@ -22,6 +22,7 @@ function ProductPage() {
 
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
 
   const { addItem } = useCart();
@@ -38,6 +39,7 @@ function ProductPage() {
         const p = data as Product;
         setProduct(p);
         setSelectedSize(p.sizes[0] ?? '');
+        setSelectedColor(p.colors[0] ?? '');
         setActiveImage(0);
         setQuantity(1);
 
@@ -64,8 +66,8 @@ function ProductPage() {
   }, [slug]);
 
   const handleAddToCart = () => {
-    if (!product || product.stock === 0) return;
-    addItem(product, quantity, selectedSize, product.colors[0] ?? '');
+    if (!product) return;
+    addItem(product, quantity, selectedSize, selectedColor);
   };
 
   if (loading) {
@@ -91,7 +93,17 @@ function ProductPage() {
 
   const displayPrice = product.salePrice ?? product.price;
   const hasDiscount = !!product.salePrice && product.salePrice < product.price;
-  const outOfStock = product.stock === 0;
+
+  const hasVariants = (product.variants?.length ?? 0) > 0;
+  const activeVariant = product.variants?.find(
+    (v) => v.size === selectedSize && v.color === selectedColor
+  );
+  const variantStock = hasVariants ? (activeVariant?.stock ?? 0) : product.stock;
+  const outOfStock = variantStock === 0;
+
+  function getColorHex(color: string): string {
+    return product.variants?.find((v) => v.color === color)?.colorHex ?? '#cccccc';
+  }
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-10">
@@ -195,6 +207,31 @@ function ProductPage() {
             </div>
           )}
 
+          {/* Selector de color */}
+          {product.colors.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-navy mb-2">
+                Color:{' '}
+                <span className="font-normal text-gray-600">{selectedColor}</span>
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {product.colors.map((color) => (
+                  <button
+                    key={color}
+                    title={color}
+                    onClick={() => setSelectedColor(color)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      selectedColor === color
+                        ? 'border-navy ring-2 ring-navy ring-offset-2 scale-110'
+                        : 'border-transparent hover:border-gray-300'
+                    }`}
+                    style={{ backgroundColor: getColorHex(color) }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Selector de cantidad */}
           <div>
             <p className="text-sm font-medium text-navy mb-2">Cantidad</p>
@@ -210,7 +247,7 @@ function ProductPage() {
                 {quantity}
               </span>
               <button
-                onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                onClick={() => setQuantity((q) => Math.min(variantStock, q + 1))}
                 disabled={outOfStock}
                 className="w-10 h-10 flex items-center justify-center text-navy hover:bg-gray-light disabled:opacity-40 transition-colors text-lg"
               >
@@ -219,7 +256,7 @@ function ProductPage() {
             </div>
             {!outOfStock && (
               <p className="text-xs text-gray-400 mt-1">
-                {product.stock} unidades disponibles
+                {variantStock} unidades disponibles
               </p>
             )}
           </div>
@@ -232,7 +269,11 @@ function ProductPage() {
             onClick={handleAddToCart}
             className="w-full"
           >
-            {outOfStock ? 'Sin stock' : 'Añadir al carrito'}
+            {outOfStock
+              ? hasVariants
+                ? 'Sin stock en esta combinación'
+                : 'Sin stock'
+              : 'Añadir al carrito'}
           </Button>
         </div>
       </div>
