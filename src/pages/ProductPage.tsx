@@ -102,7 +102,7 @@ function ProductPage() {
   const outOfStock = variantStock === 0;
 
   function getColorHex(color: string): string {
-    return product.variants?.find((v) => v.color === color)?.colorHex ?? '#cccccc';
+    return product?.variants?.find((v) => v.color === color)?.colorHex ?? '#cccccc';
   }
 
   return (
