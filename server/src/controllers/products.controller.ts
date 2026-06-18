@@ -87,6 +87,7 @@ export async function getAllProducts(req: Request, res: Response) {
     const result = await pool.query(
       `${PRODUCT_QUERY} WHERE ${conditions.join(' AND ')} ORDER BY p.created_at DESC`
     )
+    console.log('[getAllProducts] ids devueltos:', result.rows.map(r => `${JSON.stringify(r.id)} (${typeof r.id})`))
     res.json(result.rows.map(toProduct))
   } catch (error) {
     console.error('getAllProducts error:', error)
@@ -99,14 +100,12 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 export async function getProductById(req: Request, res: Response) {
   try {
     const { id } = req.params
-    const isNumeric = /^\d+$/.test(id)
     const isUUID = UUID_REGEX.test(id)
-    const condition = (isNumeric || isUUID) ? 'p.id = $1' : 'p.slug = $1'
-    const param = isNumeric ? parseInt(id, 10) : id
+    const condition = isUUID ? 'p.id = $1' : 'p.slug = $1'
 
     const result = await pool.query(
       `${PRODUCT_QUERY} WHERE ${condition}`,
-      [param]
+      [id]
     )
 
     if (result.rows.length === 0) {
@@ -197,12 +196,59 @@ export async function updateProduct(req: Request, res: Response) {
     }
 
     if (Array.isArray(variants)) {
-      await client.query('DELETE FROM product_variants WHERE product_id = $1', [id])
-      for (const v of variants as RawVariant[]) {
-        await client.query(
-          `INSERT INTO product_variants (product_id, size, color, color_hex, stock) VALUES ($1, $2, $3, $4, $5)`,
-          [id, v.size, v.color, v.color_hex, v.stock]
+      // Load current variants from DB to diff against incoming ones
+      const { rows: currentVariants } = await client.query<{ id: number; size: string; color: string }>(
+        `SELECT id, size, color FROM product_variants WHERE product_id = $1`,
+        [id]
+      )
+
+      const incomingVariants = variants as RawVariant[]
+      const existingByKey = new Map(currentVariants.map(v => [`${v.size}::${v.color}`, v]))
+      const retainedIds = new Set<number>()
+
+      for (const v of incomingVariants) {
+        const key = `${v.size}::${v.color}`
+        const existing = existingByKey.get(key)
+        if (existing) {
+          // UPDATE in place — preserves the variant id, avoids FK violations
+          await client.query(
+            `UPDATE product_variants SET stock=$1, color_hex=$2 WHERE id=$3`,
+            [v.stock, v.color_hex, existing.id]
+          )
+          retainedIds.add(existing.id)
+        } else {
+          const { rows: inserted } = await client.query(
+            `INSERT INTO product_variants (product_id, size, color, color_hex, stock) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+            [id, v.size, v.color, v.color_hex, v.stock]
+          )
+          retainedIds.add(inserted[0].id as number)
+        }
+      }
+
+      // Variants the user removed: delete only if they have no associated orders
+      const removedVariants = currentVariants.filter(v => !retainedIds.has(v.id))
+      const blockedVariants: Array<{ size: string; color: string }> = []
+
+      for (const v of removedVariants) {
+        const { rows } = await client.query(
+          `SELECT EXISTS(SELECT 1 FROM order_items WHERE variant_id = $1) AS has_orders`,
+          [v.id]
         )
+        if ((rows[0] as { has_orders: boolean }).has_orders) {
+          blockedVariants.push({ size: v.size, color: v.color })
+        } else {
+          await client.query(`DELETE FROM product_variants WHERE id = $1`, [v.id])
+        }
+      }
+
+      if (blockedVariants.length > 0) {
+        await client.query('ROLLBACK')
+        const details = blockedVariants
+          .map(v => `talla ${v.size} / color ${v.color}`)
+          .join(', ')
+        return res.status(409).json({
+          error: `No se pueden eliminar las siguientes variantes porque tienen pedidos asociados: ${details}. Edita el stock a 0 si quieres ocultarlas.`,
+        })
       }
     }
 
@@ -212,7 +258,8 @@ export async function updateProduct(req: Request, res: Response) {
     res.json(toProduct(full.rows[0]))
   } catch (error) {
     await client.query('ROLLBACK')
-    console.error('updateProduct error:', error)
+    const e = error as Record<string, unknown>
+    console.error('updateProduct error:', { message: e?.message, code: e?.code, detail: e?.detail, constraint: e?.constraint })
     res.status(500).json({ error: 'Error al actualizar producto' })
   } finally {
     client.release()
