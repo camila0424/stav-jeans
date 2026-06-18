@@ -95,6 +95,9 @@ function CartPage() {
         <div className="flex-1 flex flex-col divide-y divide-gray-200">
           {items.map(item => {
             const unitPrice = item.product.salePrice ?? item.product.price;
+            const colorHex = item.product.variants?.find(
+              v => v.size === item.size && v.color === item.color
+            )?.colorHex;
             return (
               <div
                 key={`${item.product.id}-${item.size}-${item.color}`}
@@ -109,8 +112,16 @@ function CartPage() {
                   <h3 className="font-heading text-lg text-navy leading-tight">
                     {item.product.name}
                   </h3>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Talla: {item.size} · Color: {item.color}
+                  <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1.5">
+                    Talla: {item.size} · Color:{' '}
+                    {colorHex && (
+                      <span
+                        className="inline-block w-3.5 h-3.5 rounded-full border border-gray-300 shrink-0"
+                        style={{ backgroundColor: colorHex }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    {item.color}
                   </p>
                   <p className="font-semibold text-navy mt-1">{formatEur(unitPrice)}</p>
                   <div className="flex items-center gap-2 mt-3">
