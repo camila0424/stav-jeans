@@ -35,7 +35,7 @@ function formatDate(iso: string) {
 }
 
 function formatCurrency(amount: number) {
-  return `$${Math.round(amount).toLocaleString('es-CO')}`;
+  return Number(amount).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }
 
 function AdminDashboard() {

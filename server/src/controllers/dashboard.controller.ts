@@ -5,7 +5,7 @@ export async function getDashboardStats(_req: Request, res: Response) {
   try {
     const [productsRes, ordersRes, recentRes] = await Promise.all([
       pool.query(`SELECT COUNT(*)::int AS total FROM products`),
-      pool.query(`SELECT COUNT(*)::int AS total, COALESCE(SUM(total), 0)::float AS revenue FROM orders`),
+      pool.query(`SELECT COUNT(*)::int AS total, COALESCE(SUM(total) FILTER (WHERE status != 'cancelled'), 0)::float AS revenue FROM orders`),
       pool.query(`
         SELECT o.id, COALESCE(c.name, 'Sin nombre') AS customer_name,
                o.created_at, o.total, o.status
