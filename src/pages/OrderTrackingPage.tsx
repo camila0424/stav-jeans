@@ -38,7 +38,7 @@ function OrderTrackingPage() {
     setError(null);
 
     try {
-      const result = await trackOrder(code, email);
+      const result = await trackOrder(code.replace(/^#/, ''), email);
       setOrder(result);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
@@ -69,7 +69,6 @@ function OrderTrackingPage() {
             value={code}
             onChange={e => setCode(e.target.value.toUpperCase())}
             placeholder="9FB9BE3D"
-            maxLength={8}
             className="w-full border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-navy uppercase tracking-widest"
           />
         </div>

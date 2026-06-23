@@ -87,7 +87,6 @@ export async function getAllProducts(req: Request, res: Response) {
     const result = await pool.query(
       `${PRODUCT_QUERY} WHERE ${conditions.join(' AND ')} ORDER BY p.created_at DESC`
     )
-    console.log('[getAllProducts] ids devueltos:', result.rows.map(r => `${JSON.stringify(r.id)} (${typeof r.id})`))
     res.json(result.rows.map(toProduct))
   } catch (error) {
     console.error('getAllProducts error:', error)
