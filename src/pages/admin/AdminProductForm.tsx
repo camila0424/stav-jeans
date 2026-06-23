@@ -225,8 +225,6 @@ function AdminProductForm() {
         })),
       };
 
-      // TEMP DEBUG - quitar después
-      console.log('[DEBUG checkout-id]', { id, typeofId: typeof id, isEditing, paramsRaw: window.location.pathname });
       if (isEditing && id) {
         await adminUpdateProduct(id, payload);
       } else {
