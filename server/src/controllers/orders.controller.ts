@@ -17,6 +17,7 @@ export async function trackOrder(req: Request, res: Response) {
         o.subtotal,
         o.shipping,
         o.total,
+        c.email as customer_email,
         json_agg(
           json_build_object(
             'product_name', p.name,
@@ -27,16 +28,15 @@ export async function trackOrder(req: Request, res: Response) {
           )
         ) as items
       FROM orders o
-      LEFT JOIN customers c ON c.id = o.customer_id
+      LEFT JOIN customers c ON o.customer_id = c.id AND LOWER(c.email) = LOWER($2)
       LEFT JOIN order_items oi ON oi.order_id = o.id
       LEFT JOIN products p ON p.id = oi.product_id
       LEFT JOIN product_variants pv ON pv.id = oi.variant_id
       WHERE LOWER(LEFT(o.id::text, 8)) = LOWER($1)
-        AND LOWER(c.email) = LOWER($2)
-      GROUP BY o.id
+      GROUP BY o.id, c.email
     `, [code.trim(), email.trim()])
 
-    if (result.rows.length === 0) {
+    if (result.rows.length === 0 || !result.rows[0].customer_email) {
       return res.status(404).json({ error: 'Pedido no encontrado' })
     }
 
