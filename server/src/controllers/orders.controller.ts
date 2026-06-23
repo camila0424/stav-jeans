@@ -5,6 +5,8 @@ export async function trackOrder(req: Request, res: Response) {
   try {
     const { code, email } = req.query as { code?: string; email?: string }
 
+    console.log('[TRACK] code:', code, 'email:', email)
+
     if (!code || !email) {
       return res.status(400).json({ error: 'Parámetros requeridos: code, email' })
     }
@@ -35,6 +37,9 @@ export async function trackOrder(req: Request, res: Response) {
       WHERE LOWER(LEFT(o.id::text, 8)) = LOWER($1)
       GROUP BY o.id, c.email
     `, [code.trim(), email.trim()])
+
+    console.log('[TRACK] rows encontradas:', result.rows.length)
+    console.log('[TRACK] primera fila:', JSON.stringify(result.rows[0]))
 
     if (result.rows.length === 0 || !result.rows[0].customer_email) {
       return res.status(404).json({ error: 'Pedido no encontrado' })
