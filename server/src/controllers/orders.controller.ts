@@ -70,13 +70,16 @@ export async function getAllOrders(_req: Request, res: Response) {
             'variant_id', oi.variant_id,
             'quantity', oi.quantity,
             'unit_price', oi.unit_price,
-            'product_name', p.name
+            'product_name', p.name,
+            'size', pv.size,
+            'color', pv.color
           )
         ) as items
       FROM orders o
       LEFT JOIN customers c ON c.id = o.customer_id
       LEFT JOIN order_items oi ON oi.order_id = o.id
       LEFT JOIN products p ON p.id = oi.product_id
+      LEFT JOIN product_variants pv ON pv.id = oi.variant_id
       GROUP BY o.id, c.name, c.email, c.phone
       ORDER BY o.created_at DESC
     `)

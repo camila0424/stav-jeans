@@ -107,7 +107,28 @@ function AdminOrders() {
                   <td className="px-6 py-4 font-medium text-navy">Pedido #{order.id.slice(0, 8).toUpperCase()}</td>
                   <td className="px-6 py-4 text-gray-700">{order.customer_name}</td>
                   <td className="px-6 py-4 text-gray-500">{formatDate(order.created_at)}</td>
-                  <td className="px-6 py-4 text-gray-500">{order.items?.length ?? 0} art.</td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const items = order.items ?? [];
+                      const visible = items.slice(0, 3);
+                      const extra = items.length - visible.length;
+                      return (
+                        <ul className="space-y-0.5">
+                          {visible.map((item, i) => (
+                            <li key={i} className="text-gray-700 text-xs leading-snug">
+                              <span className="font-medium text-navy">{item.product_name}</span>
+                              {item.size && <span className="text-gray-500"> · Talla {item.size}</span>}
+                              {item.color && <span className="text-gray-500"> · {item.color}</span>}
+                              <span className="text-gray-500"> · x{item.quantity}</span>
+                            </li>
+                          ))}
+                          {extra > 0 && (
+                            <li className="text-xs text-gray-400 italic">+ {extra} más</li>
+                          )}
+                        </ul>
+                      );
+                    })()}
+                  </td>
                   <td className="px-6 py-4 font-medium text-gray-700">
                     {formatPrice(order.total)}
                   </td>

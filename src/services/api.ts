@@ -422,7 +422,7 @@ export interface AdminOrder {
   created_at: string;
   total: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-  items: Array<{ id: number; product_name: string; quantity: number; unit_price: number }>;
+  items: Array<{ id: number; product_name: string; quantity: number; unit_price: number; size?: string; color?: string }>;
 }
 
 export function getAdminOrders(): Promise<AdminOrder[]> {
